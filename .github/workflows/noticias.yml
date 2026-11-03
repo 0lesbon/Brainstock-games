@@ -27,6 +27,8 @@ jobs:
   gerar:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    # As chaves estão guardadas neste ambiente (Settings > Environments)
+    environment: ELEVENLABS_API_KEY
     steps:
       - uses: actions/checkout@v4
 
