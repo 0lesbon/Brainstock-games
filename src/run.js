@@ -84,9 +84,10 @@ async function main() {
   const record = { id: story.id, title: story.title, link: story.link, source: story.source, createdAt: new Date().toISOString(), script };
 
   // 5. Publicação
-  if (flag("--no-publish") || flag("--dry-run")) {
+  const metricoolReady = ["METRICOOL_USER_TOKEN", "METRICOOL_USER_ID", "METRICOOL_BLOG_ID"].every((k) => process.env[k]);
+  if (flag("--no-publish") || flag("--dry-run") || !metricoolReady) {
     fs.writeFileSync(files.post, JSON.stringify({ record }, null, 2));
-    console.log("[publicar] pulado (--no-publish).");
+    console.log(metricoolReady ? "[publicar] pulado (--no-publish)." : "[publicar] pulado: chaves do Metricool ainda não configuradas.");
     return;
   }
   const urls = await uploadToGithubRelease({ tag: `video-${story.id}`, name: script.headline, files: [files.video, files.cover] });
