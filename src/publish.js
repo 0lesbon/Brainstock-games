@@ -68,7 +68,7 @@ export function buildMetricoolPost({ script, videoUrl, coverUrl, publishCfg, tim
   if (publishCfg.networks.includes("instagram")) post.instagramData = { type: "REEL", showReelOnFeed: true, isAiGenerated: true };
   if (publishCfg.networks.includes("youtube"))
     post.youtubeData = {
-      title: script.youtubeTitle.slice(0, 100),
+      title: (script.youtubeTitle || script.headline).slice(0, 100),
       type: "short",
       privacy: "public",
       madeForKids: false,

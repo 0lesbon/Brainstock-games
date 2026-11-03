@@ -38,22 +38,53 @@ export async function captureArticle(url, outPng) {
       }
     }
 
-    // Esconde pop-ups, anúncios fixos e overlays
-    await page.addStyleTag({
-      content: `
-        [id*="cookie" i], [class*="cookie" i], [id*="consent" i], [class*="consent" i],
-        [class*="paywall" i], [class*="newsletter" i], [class*="modal" i], [class*="popup" i],
-        [id*="ad-" i], [class*="banner-ad" i], iframe { display: none !important; }
-        html, body { overflow: auto !important; }
-      `,
+    // Esconde pop-ups, anúncios e overlays — mas nunca o bloco que contém a matéria
+    // (alguns sites usam palavras como "paywall" ou "modal" na classe da página inteira)
+    await page.addStyleTag({ content: `iframe { display: none !important; } html, body { overflow: auto !important; }` });
+    await page.evaluate(() => {
+      const h1 = document.querySelector("article h1, main h1, h1");
+      const sel = '[id*="cookie" i], [class*="cookie" i], [id*="consent" i], [class*="consent" i], [class*="paywall" i], [class*="newsletter" i], [class*="modal" i], [class*="popup" i], [id*="ad-" i], [class*="banner-ad" i]';
+      for (const el of document.querySelectorAll(sel)) {
+        if (["HTML", "BODY", "MAIN", "ARTICLE"].includes(el.tagName)) continue;
+        if (h1 && el.contains(h1)) continue;
+        if ((el.innerText || "").length > 1500) continue; // é conteúdo, não pop-up
+        el.style.setProperty("display", "none", "important");
+      }
     });
     await page.evaluate(() => {
+      const h1 = document.querySelector("article h1, main h1, h1");
       for (const el of document.querySelectorAll("body *")) {
+        if (h1 && el.contains(h1)) continue;
         const s = getComputedStyle(el);
         if ((s.position === "fixed" || s.position === "sticky") && el.getBoundingClientRect().height > 40) {
           el.style.setProperty("display", "none", "important");
         }
       }
+    });
+
+    // Remove chamadas promocionais no meio do texto ("siga o canal no WhatsApp", "leia também"...)
+    await page.evaluate(() => {
+      const promo = /(siga|entre|participe|receba).{0,40}(whatsapp|telegram|canal|newsletter|google news)|leia (também|mais)|veja (também|mais)|publicidade|continua (após|depois) (a|da) publicidade/i;
+      for (const el of document.querySelectorAll("p, li, a, div, aside, section")) {
+        const t = (el.innerText || "").trim();
+        if (t && t.length < 220 && promo.test(t)) el.style.setProperty("display", "none", "important");
+      }
+    });
+
+    // Imagens da própria matéria (fotos grandes dentro do artigo, sem logos/anúncios)
+    const articleImages = await page.evaluate(() => {
+      const root = document.querySelector("article") || document.querySelector("main") || document.body;
+      const urls = [];
+      const og = document.querySelector('meta[property="og:image"]')?.content;
+      if (og) urls.push(og);
+      for (const img of root.querySelectorAll("img")) {
+        const src = img.currentSrc || img.src || img.dataset.src;
+        if (!src || src.startsWith("data:")) continue;
+        if (img.naturalWidth && img.naturalWidth < 500) continue;
+        if (/logo|avatar|icon|sprite|banner|ads?[\/_-]|pixel|placeholder/i.test(src)) continue;
+        urls.push(new URL(src, location.href).href);
+      }
+      return [...new Set(urls)].slice(0, 6);
     });
 
     // Rola até o título da matéria (pula cabeçalho do site)
@@ -63,18 +94,21 @@ export async function captureArticle(url, outPng) {
     });
 
     const articleText = await page.evaluate(() => {
+      const grab = (root) =>
+        [...root.querySelectorAll("p")]
+          .map((p) => p.innerText.trim())
+          .filter((t) => t.length > 60)
+          .join("\n");
       const root = document.querySelector("article") || document.querySelector("main") || document.body;
-      return [...root.querySelectorAll("p")]
-        .map((p) => p.innerText.trim())
-        .filter((t) => t.length > 60)
-        .join("\n")
-        .slice(0, 8000);
+      let text = grab(root);
+      if (text.length < 300) text = grab(document.body); // sites sem a marcação padrão de artigo
+      return text.slice(0, 8000);
     });
 
     const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight);
     const clipH = Math.min(2200, Math.max(800, pageHeight - headlineY));
     await page.screenshot({ path: outPng, clip: { x: 0, y: headlineY, width: 400, height: clipH }, fullPage: true });
-    return { articleText, ok: true };
+    return { articleText, articleImages, ok: true };
   } finally {
     await browser.close();
   }
@@ -84,7 +118,7 @@ function esc(s = "") {
   return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 }
 
-export async function renderCover({ headline, source, image, profile, outPng }) {
+export async function renderCover({ headline, source, image, profile, label = "NOTÍCIA", outPng }) {
   const browser = await launch();
   try {
     const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
@@ -102,7 +136,7 @@ export async function renderCover({ headline, source, image, profile, outPng }) 
       h1 { font-size:76px; line-height:1.12; font-weight:900; letter-spacing:-1px; }
     </style></head><body>
       <div class="shade"></div>
-      <div class="top"><span class="live">NOTÍCIA</span><span class="brand">${esc(profile.name)}</span></div>
+      <div class="top"><span class="live">${esc(label)}</span><span class="brand">${esc(profile.name)}</span></div>
       <div class="box"><div class="src">Fonte: ${esc(source)}</div><h1>${esc(headline)}</h1></div>
     </body></html>`);
     await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});

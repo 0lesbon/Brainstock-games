@@ -1,47 +1,108 @@
 {
   "profile": {
-    "name": "PIONEIRO NOTÍCIAS",
-    "handle": "@pioneiro.curioso",
+    "name": "NOW NOTÍCIAS",
+    "handle": "@now.noticias",
     "accentColor": "#E11D48",
     "timezone": "America/Sao_Paulo"
   },
   "feeds": [
     {
-      "source": "g1",
-      "url": "https://g1.globo.com/rss/g1/"
+      "category": "tecnologia",
+      "source": "Tecnoblog",
+      "url": "https://tecnoblog.net/feed/"
     },
     {
-      "source": "g1 Tecnologia",
+      "category": "tecnologia",
+      "source": "Canaltech",
+      "url": "https://canaltech.com.br/rss/"
+    },
+    {
+      "category": "tecnologia",
+      "source": "TecMundo",
+      "url": "https://rss.tecmundo.com.br/feed"
+    },
+    {
+      "category": "tecnologia",
+      "source": "Olhar Digital",
+      "url": "https://olhardigital.com.br/feed/"
+    },
+    {
+      "category": "tecnologia",
+      "source": "g1",
       "url": "https://g1.globo.com/rss/g1/tecnologia/"
     },
     {
-      "source": "CNN Brasil",
-      "url": "https://www.cnnbrasil.com.br/feed/"
+      "category": "ciencia",
+      "source": "Superinteressante",
+      "url": "https://super.abril.com.br/feed/"
     },
     {
+      "category": "ciencia",
+      "source": "g1",
+      "url": "https://g1.globo.com/rss/g1/ciencia-e-saude/"
+    },
+    {
+      "category": "ciencia",
+      "source": "Jornal da USP",
+      "url": "https://jornal.usp.br/feed/"
+    },
+    {
+      "category": "economia",
+      "source": "g1",
+      "url": "https://g1.globo.com/rss/g1/economia/"
+    },
+    {
+      "category": "economia",
+      "source": "InfoMoney",
+      "url": "https://www.infomoney.com.br/feed/"
+    },
+    {
+      "category": "economia",
+      "source": "Exame",
+      "url": "https://exame.com/feed/"
+    },
+    {
+      "category": "economia",
       "source": "Agência Brasil",
-      "url": "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml"
+      "url": "https://agenciabrasil.ebc.com.br/rss/economia/feed.xml"
     }
   ],
   "selection": {
-    "maxAgeHours": 12,
+    "maxAgeHours": 24,
     "blockKeywords": [
       "assista",
       "ao vivo",
-      "veja o video",
-      "video:",
-      "vídeos:",
-      "boa noite",
-      "bom dia",
-      "edição de",
       "horóscopo",
       "patrocinado",
+      "publieditorial",
+      "cupom",
       "oferta",
+      "desconto de",
+      "black friday",
       "resultado da mega",
       "loterias",
-      "morte de criança",
+      "mega-sena",
+      "lotofácil",
+      "assassin",
+      "homicídio",
+      "morto",
+      "morte",
+      "matou",
       "estupro",
-      "suicídio"
+      "suicídio",
+      "tiroteio",
+      "baleado",
+      "esfaqueado",
+      "sequestro",
+      "acidente",
+      "lula",
+      "bolsonaro",
+      "eleição",
+      "eleições",
+      "senado",
+      "câmara dos deputados",
+      "stf",
+      "partido"
     ],
     "blockUrlParts": [
       "/video/",
@@ -49,9 +110,12 @@
       "globoplay",
       "/ao-vivo/",
       "/podcast/",
-      "/live/"
+      "/live/",
+      "/ofertas/",
+      "/cupons/",
+      "/review/"
     ],
-    "minDescriptionChars": 60
+    "minDescriptionChars": 40
   },
   "voice": {
     "modelId": "eleven_multilingual_v2",
@@ -82,15 +146,32 @@
   "script": {
     "geminiModel": "gemini-2.5-flash",
     "claudeModel": "claude-opus-5-5",
-    "targetWords": "110 a 150"
+    "targetWords": "75 a 95"
   },
   "publish": {
     "mode": "email",
     "networks": [
-      "instagram",
-      "youtube"
+      "instagram"
     ],
     "delayMinutes": 15,
     "autoPublish": true
+  },
+  "categories": {
+    "_rotacao": "Ordem dos assuntos, um por vídeo. Repita um nome para ele aparecer mais vezes.",
+    "rotation": [
+      "tecnologia",
+      "ciencia",
+      "economia"
+    ],
+    "labels": {
+      "tecnologia": "TECNOLOGIA",
+      "ciencia": "CIÊNCIA",
+      "economia": "ECONOMIA"
+    }
+  },
+  "images": {
+    "_info": "Imagens extras no vídeo: as da própria matéria + banco gratuito (Pexels, se PEXELS_API_KEY existir, e Wikimedia Commons).",
+    "max": 4,
+    "secondsEach": 4.5
   }
 }

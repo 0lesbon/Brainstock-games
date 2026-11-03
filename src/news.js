@@ -25,7 +25,7 @@ function tag(block, name) {
   return m ? m[1] : "";
 }
 
-export function parseRss(xml, source) {
+export function parseRss(xml, source, category = "geral") {
   const items = [];
   for (const m of xml.matchAll(/<item[\s>][\s\S]*?<\/item>/gi)) {
     const block = m[0];
@@ -43,6 +43,7 @@ export function parseRss(xml, source) {
     items.push({
       id: crypto.createHash("sha1").update(link).digest("hex").slice(0, 16),
       source,
+      category,
       title,
       link: link.trim(),
       description,
@@ -56,11 +57,11 @@ export function parseRss(xml, source) {
 export async function fetchFeeds(feeds) {
   const all = [];
   await Promise.all(
-    feeds.map(async ({ source, url }) => {
+    feeds.map(async ({ source, url, category }) => {
       try {
         const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20000) });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        all.push(...parseRss(await res.text(), source));
+        all.push(...parseRss(await res.text(), source, category));
       } catch (err) {
         console.warn(`[news] falha no feed ${source}: ${err.message}`);
       }
@@ -70,7 +71,8 @@ export async function fetchFeeds(feeds) {
 }
 
 // Escolhe a notícia mais recente que ainda não foi publicada e passa nos filtros.
-export function pickStory(items, { history, maxAgeHours = 12, blockKeywords = [], blockUrlParts = [], minDescriptionChars = 0 }) {
+// Se preferCategory for informado, dá preferência a esse assunto (rodízio de nichos).
+export function pickStory(items, { history, preferCategory, maxAgeHours = 12, blockKeywords = [], blockUrlParts = [], minDescriptionChars = 0 }) {
   const seen = new Set(history.published.map((p) => p.id));
   const seenTitles = history.published.map((p) => normalize(p.title));
   const cutoff = Date.now() - maxAgeHours * 3600 * 1000;
@@ -88,7 +90,8 @@ export function pickStory(items, { history, maxAgeHours = 12, blockKeywords = []
     })
     // evita repetir o mesmo assunto vindo de outro veículo
     .filter((it) => !seenTitles.some((t) => similarity(t, normalize(it.title)) > 0.6))
-    .sort((a, b) => (b.publishedAt?.getTime() || 0) - (a.publishedAt?.getTime() || 0))[0];
+    .sort((a, b) => (b.publishedAt?.getTime() || 0) - (a.publishedAt?.getTime() || 0))
+    .sort((a, b) => (b.category === preferCategory) - (a.category === preferCategory))[0];
 }
 
 function normalize(s) {

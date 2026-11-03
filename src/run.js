@@ -12,6 +12,7 @@ import { captureArticle, renderCover } from "./screenshot.js";
 import { writeScript } from "./script.js";
 import { narrate, pickVoice } from "./tts.js";
 import { renderVideo } from "./video.js";
+import { collectImages } from "./images.js";
 import { uploadToGithubRelease, buildMetricoolPost, scheduleOnMetricool } from "./publish.js";
 import { emailReady, sendVideoEmail } from "./email.js";
 
@@ -29,17 +30,19 @@ async function main() {
   let story;
   const manualUrl = opt("--url");
   if (manualUrl) {
-    story = { id: `manual-${Date.now()}`, source: opt("--source") || new URL(manualUrl).hostname.replace(/^www\./, ""), title: opt("--title") || "", link: manualUrl, description: "", image: null };
+    story = { id: `manual-${Date.now()}`, category: opt("--category") || "tecnologia", source: opt("--source") || new URL(manualUrl).hostname.replace(/^www\./, ""), title: opt("--title") || "", link: manualUrl, description: "", image: null };
   } else {
     const items = await fetchFeeds(cfg.feeds);
     console.log(`[news] ${items.length} itens nos feeds`);
-    story = pickStory(items, { history, ...cfg.selection });
+    const rotation = cfg.categories?.rotation || [];
+    const preferCategory = opt("--category") || rotation[history.published.length % Math.max(1, rotation.length)];
+    story = pickStory(items, { history, preferCategory, ...cfg.selection });
     if (!story) {
       console.log("[news] nenhuma notícia nova; encerrando.");
       return;
     }
   }
-  console.log(`[news] escolhida: ${story.title || story.link} (${story.source})`);
+  console.log(`[news] escolhida [${story.category}]: ${story.title || story.link} (${story.source})`);
 
   const outDir = path.join(ROOT, "out", story.id);
   fs.mkdirSync(outDir, { recursive: true });
@@ -54,8 +57,9 @@ async function main() {
 
   // 2. Print da matéria + texto
   let articleText = "";
+  let articleImages = [];
   try {
-    ({ articleText } = await captureArticle(story.link, files.article));
+    ({ articleText, articleImages } = await captureArticle(story.link, files.article));
     console.log(`[print] ok (${articleText.length} caracteres de texto)`);
   } catch (err) {
     console.warn(`[print] falhou (${err.message}); o vídeo usará só a capa.`);
@@ -67,12 +71,24 @@ async function main() {
   console.log(`[roteiro] ${script.narration.split(/\s+/).length} palavras: ${script.headline}`);
 
   // 4. Capa, narração e vídeo
-  await renderCover({ headline: script.headline, source: story.source, image: story.image, profile: cfg.profile, outPng: files.cover });
+  const coverImage = story.image || articleImages[0] || null;
+  const label = cfg.categories?.labels?.[story.category] || "NOTÍCIA";
+  await renderCover({ headline: script.headline, source: story.source, image: coverImage, profile: cfg.profile, label, outPng: files.cover });
+  const images = await collectImages({
+    articleImages,
+    queries: script.imageQueries,
+    coverImage,
+    outDir,
+    max: cfg.images?.max ?? 4,
+  });
+  console.log(`[imagens] ${images.length} imagens: ${images.map((i) => i.credit).join(", ")}`);
   const voice = pickVoice(cfg.voice, history.published.length + (opt("--voice-index") ? Number(opt("--voice-index")) : 0));
   const { words } = await narrate(script.narration, cfg.voice, files.audio, voice.id);
   console.log(`[voz] ${voice.name}: ${words.length} palavras sincronizadas`);
-  const { duration } = renderVideo({
+  const { duration, segments } = renderVideo({
     coverPng: files.cover,
+    images,
+    secondsEach: cfg.images?.secondsEach,
     articlePng: fs.existsSync(files.article) ? files.article : null,
     audioMp3: files.audio,
     words,
@@ -81,9 +97,9 @@ async function main() {
     assPath: files.ass,
     outMp4: files.video,
   });
-  console.log(`[video] ${files.video} (${duration.toFixed(1)}s)`);
+  console.log(`[video] ${files.video} (${duration.toFixed(1)}s) ${segments.join(" | ")}`);
 
-  const record = { id: story.id, title: story.title, link: story.link, source: story.source, voice: voice.name, createdAt: new Date().toISOString(), script };
+  const record = { id: story.id, title: story.title, link: story.link, source: story.source, category: story.category, voice: voice.name, createdAt: new Date().toISOString(), script };
 
   // 5. Publicação
   //   publish.mode = "email"     -> manda o vídeo + legenda para o seu e-mail (você posta pelo celular)

@@ -27,32 +27,27 @@ export async function sendVideoEmail({ script, story, voiceName, duration, video
 
   const text = `NOVO VÍDEO PRONTO PARA POSTAR
 
-LEGENDA (Instagram / TikTok):
+LEGENDA (Instagram):
 ${caption}
-
-TÍTULO (YouTube Shorts):
-${script.youtubeTitle}
 
 Notícia original: ${story.link} (${story.source})
 Voz: ${voiceName} · Duração: ${duration.toFixed(0)} s
 ${downloadUrl ? `Baixar o vídeo: ${downloadUrl}` : ""}${attachVideo ? "" : "\n(O vídeo passou de 25 MB e não foi anexado; use o link acima.)"}
 
-Lembrete: marque "conteúdo gerado por IA" ao postar.`;
+Ao postar no Instagram: Reel, ative "Rótulo de IA" em Configurações avançadas.`;
 
   const box = "background:#f4f4f5;border-radius:10px;padding:14px 16px;white-space:pre-wrap;font-size:15px;line-height:1.45;color:#111";
   const html = `<div style="font-family:Arial,sans-serif;max-width:560px;color:#111">
   <h2 style="margin:0 0 6px">🎬 Novo vídeo pronto para postar</h2>
   <p style="margin:0 0 16px;color:#555">${esc(story.source)} · voz: ${esc(voiceName)} · ${duration.toFixed(0)} s</p>
-  <p style="margin:0 0 6px"><b>Legenda</b> (Instagram / TikTok) — toque e segure para copiar:</p>
+  <p style="margin:0 0 6px"><b>Legenda do Instagram</b> — toque e segure para copiar:</p>
   <div style="${box}">${esc(caption)}</div>
-  <p style="margin:18px 0 6px"><b>Título</b> (YouTube Shorts):</p>
-  <div style="${box}">${esc(script.youtubeTitle)}</div>
   <p style="margin:18px 0 0">
     ${downloadUrl ? `<a href="${esc(downloadUrl)}">⬇️ Baixar o vídeo</a> · ` : ""}
     <a href="${esc(story.link)}">Notícia original</a>
   </p>
   ${attachVideo ? "" : `<p style="color:#b45309">O vídeo passou de 25 MB e não foi anexado; use o link de download.</p>`}
-  <p style="margin-top:18px;color:#777;font-size:13px">Lembrete: marque "conteúdo gerado por IA" ao postar.</p>
+  <p style="margin-top:18px;color:#777;font-size:13px">Ao postar: Reel, ative "Rótulo de IA" em Configurações avançadas.</p>
 </div>`;
 
   const attachments = [{ filename: "capa.png", path: coverPath }];

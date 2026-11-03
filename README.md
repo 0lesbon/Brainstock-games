@@ -1,6 +1,7 @@
-# Perfil de notícias automático
+# @now.noticias — Reels de notícia automáticos
 
-Gera e publica sozinho vídeos curtos de notícia (Reels / Shorts), narrados com a **ElevenLabs**.
+Gera sozinho Reels de notícia sobre **tecnologia, IA, ciência, curiosidades e economia**, narrados com a **ElevenLabs**,
+com print da matéria e fotos relacionadas.
 
 ```
 RSS dos portais ─► escolhe notícia inédita ─► print da matéria + texto
@@ -8,8 +9,10 @@ RSS dos portais ─► escolhe notícia inédita ─► print da matéria + text
       ─► ffmpeg monta o vídeo 1080x1920 ─► GitHub Releases hospeda ─► Metricool agenda no Instagram/YouTube
 ```
 
-**Como fica o vídeo:** 3 s de capa com a manchete e a foto da notícia (zoom lento) → print da matéria rolando
-dentro de um card, com barra da marca no topo, "Fonte: …" e legenda palavra por palavra sincronizada com a voz.
+**Como fica o vídeo (30–40 s):** capa com a manchete e o assunto (zoom lento) → print da matéria rolando →
+fotos relacionadas (da matéria, Pexels, Openverse ou Wikimedia Commons) com zoom lento → print de novo.
+Barra da marca no topo, "Fonte: …", crédito da imagem e legenda palavra por palavra sincronizada com a voz.
+Os assuntos se revezam a cada vídeo (`categories.rotation` em `config.json`).
 
 ## Configuração (uma vez)
 
@@ -21,6 +24,7 @@ dentro de um card, com barra da marca no topo, "Fonte: …" e legenda palavra po
    | `ELEVENLABS_VOICE_ID` | sua voz (Voice Library). Entra em rodízio com as vozes padrão de `config.json` (`voice.defaultVoices`) | recomendado |
    | `GEMINI_API_KEY` | roteiro escrito pelo Gemini (Google AI Studio) | recomendado |
    | `ANTHROPIC_API_KEY` | alternativa ao Gemini: roteiro pelo Claude | opcional |
+   | `PEXELS_API_KEY` | fotos de banco de imagens mais bonitas (grátis em pexels.com/api) | opcional |
    | `GMAIL_USER` | Gmail que envia os vídeos (modo e-mail, o padrão) | sim, no modo e-mail |
    | `GMAIL_APP_PASSWORD` | senha de app do Gmail (myaccount.google.com/apppasswords) | sim, no modo e-mail |
    | `EMAIL_TO` | onde receber, se for outro e-mail | opcional |

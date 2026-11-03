@@ -8,21 +8,28 @@ const SCHEMA = {
   properties: {
     headline: { type: "string", description: "Manchete curta para a capa do vídeo, até 70 caracteres" },
     narration: { type: "string", description: "Texto que será narrado" },
-    caption: { type: "string", description: "Legenda do post, 2 a 4 frases, terminando com a fonte" },
+    caption: { type: "string", description: "Legenda do Instagram: 2 a 4 frases, uma pergunta para o público comentar e, na última linha, 'Fonte: <veículo>'" },
     hashtags: { type: "array", items: { type: "string" } },
-    youtubeTitle: { type: "string", description: "Título para o YouTube Shorts, até 90 caracteres" },
+    imageQueries: {
+      type: "array",
+      items: { type: "string" },
+      description: "3 buscas curtas EM INGLÊS para achar fotos ilustrativas do assunto num banco de imagens (ex.: 'James Webb telescope', 'smartphone battery', 'Brazilian real banknotes')",
+    },
   },
-  required: ["headline", "narration", "caption", "hashtags", "youtubeTitle"],
+  required: ["headline", "narration", "caption", "hashtags", "imageQueries"],
 };
 
-const SYSTEM = `Você é o roteirista de um perfil brasileiro de notícias em vídeos curtos (Reels/Shorts).
+const SYSTEM = `Você é o roteirista do @now.noticias, perfil brasileiro de Reels no Instagram sobre tecnologia, inteligência artificial, ciência, curiosidades e economia do dia a dia.
+Público: brasileiros curiosos de 18 a 40 anos rolando o feed; você tem 1 segundo para prender a atenção.
 Regras:
-- Escreva em português do Brasil, tom jornalístico, claro e direto, sem sensacionalismo nem opinião.
+- Escreva em português do Brasil, tom jornalístico mas leve e próximo, claro e direto, sem exagero nem opinião.
 - Use apenas fatos presentes no material fornecido. Nunca invente números, nomes, falas ou datas.
 - Reescreva com suas próprias palavras; não copie frases da matéria.
-- A narração começa com um gancho forte na primeira frase, explica o que aconteceu, por que importa e termina citando a fonte ("segundo o <veículo>").
+- A primeira frase é um gancho curto e curioso (até 10 palavras) que faz a pessoa querer ouvir o resto, sem mentir nem exagerar.
+- Depois: o que aconteceu, por que isso importa para quem está assistindo (bolso, celular, dia a dia, futuro) e termine citando a fonte ("segundo o <veículo>").
+- Em economia, traduza números e termos técnicos para o impacto no bolso.
 - Narração escrita para ser falada: frases curtas, números por extenso quando ajudar a leitura, sem emojis, sem hashtags, sem markdown.
-- Hashtags: 4 a 6, sem o símbolo #, relevantes para o assunto.`;
+- Hashtags: 5 a 8, sem o símbolo #, misturando o assunto específico e o nicho (ex.: tecnologia, inteligenciaartificial, ciencia, curiosidades, economia).`;
 
 function userPrompt(story, articleText, cfg) {
   return `Veículo: ${story.source}
@@ -33,7 +40,8 @@ Link: ${story.link}
 Texto da matéria:
 ${articleText || "(não foi possível extrair o texto; use só título e resumo)"}
 
-Escreva uma narração de ${cfg.targetWords} palavras.`;
+Assunto do perfil para este vídeo: ${story.category}.
+Escreva uma narração de ${cfg.targetWords} palavras (30 a 40 segundos falados).`;
 }
 
 export async function writeScript(story, articleText, cfg) {
@@ -84,9 +92,10 @@ async function withClaude(story, articleText, cfg) {
 }
 
 function validate(s) {
-  for (const k of ["headline", "narration", "caption", "youtubeTitle"])
+  for (const k of ["headline", "narration", "caption"])
     if (typeof s[k] !== "string" || !s[k].trim()) throw new Error(`campo ${k} vazio`);
   if (!Array.isArray(s.hashtags)) s.hashtags = [];
+  if (!Array.isArray(s.imageQueries)) s.imageQueries = [];
   return s;
 }
 
@@ -96,7 +105,7 @@ function fallbackScript(story) {
     headline: story.title.slice(0, 90),
     narration: `${story.title}. ${desc} As informações são do ${story.source}.`,
     caption: `${story.title}\n\n${desc.slice(0, 300)}\n\nFonte: ${story.source}`,
-    hashtags: ["noticias", "brasil", "urgente", "informacao"],
-    youtubeTitle: story.title.slice(0, 90),
+    hashtags: ["noticias", "tecnologia", "ciencia", "economia", "curiosidades"],
+    imageQueries: [],
   };
 }

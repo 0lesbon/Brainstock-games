@@ -1,9 +1,10 @@
 // Monta o vídeo vertical 1080x1920 com ffmpeg:
 //   0-3s  capa com a manchete (zoom lento)
-//   3s+   print da matéria rolando dentro de um card, fundo desfocado
+//   depois: print da matéria rolando -> fotos relacionadas (zoom lento) -> print de novo
 //   legenda palavra por palavra sincronizada com a narração + barra com a marca do perfil
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import path from "node:path";
 
 const W = 1080;
 const H = 1920;
@@ -52,7 +53,7 @@ function chunkWords(words, maxWords = 3, maxChars = 20) {
   return chunks;
 }
 
-export function buildAss({ words, duration, profile, source }) {
+export function buildAss({ words, duration, profile, source, credits = [] }) {
   const accent = assColor(profile.accentColor);
   const lines = [
     "[Script Info]",
@@ -82,6 +83,8 @@ export function buildAss({ words, duration, profile, source }) {
   lines.push(`Dialogue: 2,${s},${e},Brand,,0,0,0,,{\\pos(275,124)}${escAss(profile.name)}`);
   lines.push(`Dialogue: 2,${s},${e},Brand,,0,0,0,,{\\pos(${CARD.x},${CARD.y + CARD.h + 24})\\fs32\\b0\\1a&H40&}Fonte: ${escAss(source)}`);
   lines.push(`Dialogue: 2,0:00:00.00,${e},Small,,0,0,0,,{\\1a&H50&}${escAss(profile.handle)}`);
+  for (const c of credits)
+    lines.push(`Dialogue: 2,${assTime(c.start)},${assTime(c.end)},Brand,,0,0,0,,{\\an9\\pos(${CARD.x + CARD.w},${CARD.y + CARD.h + 24})\\fs28\\b0\\1a&H50&}${escAss(c.text)}`);
 
   // Legenda palavra por palavra (palavra atual destacada na cor do perfil)
   const chunks = chunkWords(words);
@@ -101,46 +104,114 @@ export function buildAss({ words, duration, profile, source }) {
   return lines.join("\n") + "\n";
 }
 
-export function renderVideo({ coverPng, articlePng, audioMp3, words, profile, source, assPath, outMp4 }) {
-  const duration = probeDuration(audioMp3) + 0.7;
-  fs.writeFileSync(assPath, buildAss({ words, duration, profile, source }));
+function ff(args) {
+  execFileSync("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", ...args], { stdio: "inherit" });
+}
 
-  const art = articlePng && fs.existsSync(articlePng) ? articlePng : coverPng;
-  const { width, height } = pngSize(art);
-  const scaledH = Math.round((height * CARD.w) / width);
-  const travel = Math.max(0, scaledH - CARD.h);
-  const speed = Math.min(140, travel / Math.max(1, duration - COVER_SECONDS - 1));
-  const coverFrames = COVER_SECONDS * FPS;
+const SEG_ENC = ["-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-r", String(FPS)];
 
+// Capa com zoom lento
+function segCover(coverPng, dur, out) {
+  ff([
+    "-i", coverPng,
+    "-vf", `scale=${W * 2}:${H * 2},zoompan=z='min(zoom+0.0009,1.08)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${Math.ceil(dur * FPS)}:s=${W}x${H}:fps=${FPS}`,
+    "-t", dur.toFixed(3), ...SEG_ENC, out,
+  ]);
+}
+
+// Print da matéria rolando dentro do card, fundo = capa desfocada
+function segPrint({ coverPng, art, dur, startY, speed, travel }, out) {
   const filter = [
-    // fundo: capa desfocada e escurecida
     `[0:v]scale=${W}:${H},boxblur=30:3,eq=brightness=-0.25[bg]`,
-    // print da matéria rolando dentro do card com cantos arredondados simulados por borda
-    `[1:v]scale=${CARD.w}:-2,crop=${CARD.w}:${CARD.h}:0:'min(max(0\\,t-${COVER_SECONDS + 0.5})*${speed.toFixed(2)}\\,${travel})'[art]`,
-    `[bg][art]overlay=${CARD.x}:${CARD.y}:shortest=1[base]`,
-    // capa com zoom lento nos 3 primeiros segundos
-    `[2:v]scale=${W * 2}:${H * 2},zoompan=z='min(zoom+0.0009,1.08)':d=${coverFrames}:s=${W}x${H}:fps=${FPS},trim=duration=${COVER_SECONDS}[cv]`,
-    `[base][cv]overlay=0:0:eof_action=pass[pre]`,
-    `[pre]ass=${assPath.replace(/:/g, "\\:")}[v]`,
+    `[1:v]scale=${CARD.w}:-2,crop=${CARD.w}:${CARD.h}:0:'min(${startY.toFixed(1)}+t*${speed.toFixed(2)}\\,${travel})'[art]`,
+    `[bg][art]overlay=${CARD.x}:${CARD.y}[v]`,
   ].join(";");
+  ff([
+    "-loop", "1", "-framerate", String(FPS), "-t", dur.toFixed(3), "-i", coverPng,
+    "-loop", "1", "-framerate", String(FPS), "-t", dur.toFixed(3), "-i", art,
+    "-filter_complex", filter, "-map", "[v]", "-t", dur.toFixed(3), ...SEG_ENC, out,
+  ]);
+}
 
-  execFileSync(
-    "ffmpeg",
-    [
-      "-y", "-hide_banner", "-loglevel", "error",
-      "-loop", "1", "-framerate", String(FPS), "-t", duration.toFixed(2), "-i", coverPng,
-      "-loop", "1", "-framerate", String(FPS), "-t", duration.toFixed(2), "-i", art,
-      "-i", coverPng,
-      "-i", audioMp3,
-      "-filter_complex", filter,
-      "-map", "[v]", "-map", "3:a",
-      "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p", "-r", String(FPS),
-      "-c:a", "aac", "-b:a", "192k", "-af", "apad",
-      "-t", duration.toFixed(2),
-      "-movflags", "+faststart",
-      outMp4,
-    ],
-    { stdio: "inherit" },
-  );
-  return { duration };
+// Foto relacionada com zoom lento (efeito Ken Burns) dentro do card, fundo = a própria foto desfocada
+function segImage({ file, dur, zoomIn }, out) {
+  const frames = Math.ceil(dur * FPS);
+  const z = zoomIn ? `min(zoom+0.0011,1.16)` : `if(eq(on,0),1.16,max(zoom-0.0011,1.0))`;
+  const filter = [
+    `[0:v]split[a][b]`,
+    `[a]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},boxblur=35:3,eq=brightness=-0.3,loop=${frames}:1:0,fps=${FPS}[bg]`,
+    `[b]scale=${CARD.w * 2}:${CARD.h * 2}:force_original_aspect_ratio=increase,crop=${CARD.w * 2}:${CARD.h * 2},zoompan=z='${z}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${CARD.w}x${CARD.h}:fps=${FPS}[fg]`,
+    `[bg][fg]overlay=${CARD.x}:${CARD.y}:shortest=1[v]`,
+  ].join(";");
+  ff(["-i", file, "-filter_complex", filter, "-map", "[v]", "-t", dur.toFixed(3), ...SEG_ENC, out]);
+}
+
+// Monta a linha do tempo: capa -> print -> fotos relacionadas -> print (continua rolando)
+export function planSegments({ duration, hasArticle, images, secondsEach = 4.5 }) {
+  const segs = [{ type: "cover", dur: COVER_SECONDS }];
+  let rest = duration - COVER_SECONDS;
+  if (!images.length) return [...segs, { type: "print", dur: rest }];
+
+  const firstPrint = hasArticle ? Math.min(7, rest * 0.35) : 0;
+  if (firstPrint > 0) segs.push({ type: "print", dur: firstPrint }), (rest -= firstPrint);
+
+  const fit = Math.max(1, Math.min(images.length, Math.floor(rest / 3)));
+  const each = Math.min(secondsEach, rest / fit);
+  images.slice(0, fit).forEach((img, i) => segs.push({ type: "image", dur: each, image: img, zoomIn: i % 2 === 0 }));
+  rest -= each * fit;
+  if (rest > 1.5 && hasArticle) segs.push({ type: "print", dur: rest });
+  else segs[segs.length - 1].dur += Math.max(0, rest);
+  return segs;
+}
+
+export function renderVideo({ coverPng, articlePng, audioMp3, words, profile, source, images = [], secondsEach, assPath, outMp4 }) {
+  const duration = probeDuration(audioMp3) + 0.7;
+  const hasArticle = Boolean(articlePng && fs.existsSync(articlePng));
+  const art = hasArticle ? articlePng : coverPng;
+  const segs = planSegments({ duration, hasArticle, images, secondsEach });
+
+  // créditos das fotos (aparecem durante o trecho de cada uma)
+  let t = 0;
+  const credits = [];
+  for (const sg of segs) {
+    if (sg.type === "image") credits.push({ start: t, end: t + sg.dur, text: `Imagem: ${sg.image.credit}` });
+    t += sg.dur;
+  }
+  fs.writeFileSync(assPath, buildAss({ words, duration, profile, source, credits }));
+
+  // rolagem do print distribuída entre todos os trechos de print
+  const { width, height } = pngSize(art);
+  const travel = Math.max(0, Math.round((height * CARD.w) / width) - CARD.h);
+  const printTime = segs.filter((x) => x.type === "print").reduce((n, x) => n + x.dur, 0);
+  const speed = Math.min(140, travel / Math.max(1, printTime));
+
+  const dir = path.dirname(outMp4);
+  const parts = [];
+  let scrolled = 0;
+  segs.forEach((sg, i) => {
+    const out = path.join(dir, `seg-${String(i).padStart(2, "0")}.mp4`);
+    if (sg.type === "cover") segCover(coverPng, sg.dur, out);
+    else if (sg.type === "print") {
+      segPrint({ coverPng, art, dur: sg.dur, startY: scrolled, speed, travel }, out);
+      scrolled += sg.dur * speed;
+    } else segImage({ file: sg.image.file, dur: sg.dur, zoomIn: sg.zoomIn }, out);
+    parts.push(out);
+  });
+
+  const list = path.join(dir, "segmentos.txt");
+  fs.writeFileSync(list, parts.map((p) => `file '${path.basename(p)}'`).join("\n") + "\n");
+
+  ff([
+    "-f", "concat", "-safe", "0", "-i", list,
+    "-i", audioMp3,
+    "-vf", `ass=${assPath.replace(/:/g, "\\:")}`,
+    "-map", "0:v", "-map", "1:a",
+    "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p", "-r", String(FPS),
+    "-c:a", "aac", "-b:a", "192k", "-af", "apad",
+    "-t", duration.toFixed(2),
+    "-movflags", "+faststart",
+    outMp4,
+  ]);
+  for (const p of [...parts, list]) fs.rmSync(p, { force: true });
+  return { duration, segments: segs.map((x) => `${x.type}:${x.dur.toFixed(1)}s`) };
 }
