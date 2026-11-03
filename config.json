@@ -85,6 +85,7 @@
     "targetWords": "110 a 150"
   },
   "publish": {
+    "mode": "email",
     "networks": [
       "instagram",
       "youtube"

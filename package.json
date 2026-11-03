@@ -9,9 +9,12 @@
     "dry-run": "node src/run.js --dry-run",
     "test:video": "node src/run.js --dry-run --no-publish"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
+    "nodemailer": "^7.0.13",
     "playwright": "1.63.0"
   }
 }

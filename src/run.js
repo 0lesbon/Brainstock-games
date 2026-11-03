@@ -13,6 +13,7 @@ import { writeScript } from "./script.js";
 import { narrate, pickVoice } from "./tts.js";
 import { renderVideo } from "./video.js";
 import { uploadToGithubRelease, buildMetricoolPost, scheduleOnMetricool } from "./publish.js";
+import { emailReady, sendVideoEmail } from "./email.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -85,26 +86,48 @@ async function main() {
   const record = { id: story.id, title: story.title, link: story.link, source: story.source, voice: voice.name, createdAt: new Date().toISOString(), script };
 
   // 5. Publicação
-  const metricoolReady = ["METRICOOL_USER_TOKEN", "METRICOOL_USER_ID", "METRICOOL_BLOG_ID"].every((k) => process.env[k]);
-  if (flag("--no-publish") || flag("--dry-run") || !metricoolReady) {
+  //   publish.mode = "email"     -> manda o vídeo + legenda para o seu e-mail (você posta pelo celular)
+  //   publish.mode = "metricool" -> agenda direto no Metricool (exige plano Advanced, com API)
+  const mode = cfg.publish.mode || "email";
+  const skip = (why) => {
     fs.writeFileSync(files.post, JSON.stringify({ record }, null, 2));
-    console.log(metricoolReady ? "[publicar] pulado (--no-publish)." : "[publicar] pulado: chaves do Metricool ainda não configuradas.");
-    return;
-  }
-  const urls = await uploadToGithubRelease({ tag: `video-${story.id}`, name: script.headline, files: [files.video, files.cover] });
-  const post = buildMetricoolPost({
-    script,
-    videoUrl: urls["video.mp4"],
-    coverUrl: urls["capa.png"],
-    publishCfg: cfg.publish,
-    timezone: cfg.profile.timezone,
-    source: story.source,
-  });
-  fs.writeFileSync(files.post, JSON.stringify({ record, post }, null, 2));
-  const result = await scheduleOnMetricool(post);
-  console.log(`[publicar] agendado no Metricool para ${post.publicationDate.dateTime}`, JSON.stringify(result).slice(0, 300));
+    console.log(`[publicar] pulado: ${why}`);
+  };
+  if (flag("--no-publish") || flag("--dry-run")) return skip("--no-publish.");
 
-  history.published.push({ ...record, script: undefined, videoUrl: urls["video.mp4"], scheduledFor: post.publicationDate.dateTime });
+  let entry;
+  if (mode === "email") {
+    if (!emailReady()) return skip("defina GMAIL_USER e GMAIL_APP_PASSWORD para receber os vídeos por e-mail.");
+    let downloadUrl = null;
+    try {
+      const urls = await uploadToGithubRelease({ tag: `video-${story.id}`, name: script.headline, files: [files.video, files.cover] });
+      downloadUrl = urls["video.mp4"];
+    } catch (err) {
+      console.warn(`[publicar] não consegui criar o link de download (${err.message}); o vídeo vai só em anexo.`);
+    }
+    const id = await sendVideoEmail({ script, story, voiceName: voice.name, duration, videoPath: files.video, coverPath: files.cover, downloadUrl });
+    console.log(`[publicar] e-mail enviado (${id})`);
+    fs.writeFileSync(files.post, JSON.stringify({ record, downloadUrl }, null, 2));
+    entry = { videoUrl: downloadUrl, emailedAt: new Date().toISOString() };
+  } else {
+    const metricoolReady = ["METRICOOL_USER_TOKEN", "METRICOOL_USER_ID", "METRICOOL_BLOG_ID"].every((k) => process.env[k]);
+    if (!metricoolReady) return skip("chaves do Metricool ainda não configuradas.");
+    const urls = await uploadToGithubRelease({ tag: `video-${story.id}`, name: script.headline, files: [files.video, files.cover] });
+    const post = buildMetricoolPost({
+      script,
+      videoUrl: urls["video.mp4"],
+      coverUrl: urls["capa.png"],
+      publishCfg: cfg.publish,
+      timezone: cfg.profile.timezone,
+      source: story.source,
+    });
+    fs.writeFileSync(files.post, JSON.stringify({ record, post }, null, 2));
+    const result = await scheduleOnMetricool(post);
+    console.log(`[publicar] agendado no Metricool para ${post.publicationDate.dateTime}`, JSON.stringify(result).slice(0, 300));
+    entry = { videoUrl: urls["video.mp4"], scheduledFor: post.publicationDate.dateTime };
+  }
+
+  history.published.push({ ...record, script: undefined, ...entry });
   history.published = history.published.slice(-500);
   fs.writeFileSync(historyPath, JSON.stringify(history, null, 2) + "\n");
 }

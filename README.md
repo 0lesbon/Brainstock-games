@@ -21,9 +21,15 @@ dentro de um card, com barra da marca no topo, "Fonte: …" e legenda palavra po
    | `ELEVENLABS_VOICE_ID` | sua voz (Voice Library). Entra em rodízio com as vozes padrão de `config.json` (`voice.defaultVoices`) | recomendado |
    | `GEMINI_API_KEY` | roteiro escrito pelo Gemini (Google AI Studio) | recomendado |
    | `ANTHROPIC_API_KEY` | alternativa ao Gemini: roteiro pelo Claude | opcional |
+   | `GMAIL_USER` | Gmail que envia os vídeos (modo e-mail, o padrão) | sim, no modo e-mail |
+   | `GMAIL_APP_PASSWORD` | senha de app do Gmail (myaccount.google.com/apppasswords) | sim, no modo e-mail |
+   | `EMAIL_TO` | onde receber, se for outro e-mail | opcional |
    | `METRICOOL_USER_TOKEN` | postagem automática (Metricool → Configurações → API) | para postar |
    | `METRICOOL_USER_ID` | seu ID de usuário no Metricool | para postar |
    | `METRICOOL_BLOG_ID` | ID da marca (a do `pioneiro.curioso` é `7696558`) | para postar |
+
+   Em `config.json`, `publish.mode` escolhe: `"email"` (você recebe o vídeo + legenda e posta pelo celular)
+   ou `"metricool"` (agenda sozinho; exige plano Advanced do Metricool).
 
 2. **Repositório público** — o Metricool baixa o vídeo por link; os releases precisam ser públicos.
 3. Ajuste o `config.json`: nome do perfil, cor, feeds, palavras bloqueadas, redes e voz.
