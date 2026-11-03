@@ -9,6 +9,15 @@ import path from "node:path";
 
 const UA = "NowNoticiasBot/0.1 (+https://github.com/0lesbon/Brainstock-games)";
 
+const STOP = new Set(["the", "and", "with", "for", "from", "of", "in", "on", "a", "an", "to", "by", "new", "old"]);
+
+// A foto só serve se os tags/título dela tiverem pelo menos uma palavra importante da busca
+function relevant(query, text) {
+  const words = query.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !STOP.has(w));
+  const hay = (text || "").toLowerCase();
+  return words.some((w) => hay.includes(w.replace(/s$/, "")));
+}
+
 async function searchPexels(query) {
   const key = process.env.PEXELS_API_KEY;
   if (!key) return [];
@@ -35,7 +44,10 @@ async function searchPixabay(query) {
   const res = await fetch(`https://pixabay.com/api/?${params}`, { signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`Pixabay HTTP ${res.status}`);
   const data = await res.json();
-  return (data.hits || []).slice(0, 2).map((h) => ({ url: h.largeImageURL, credit: `Pixabay/${String(h.user).slice(0, 20)}` }));
+  return (data.hits || [])
+    .filter((h) => relevant(query, h.tags))
+    .slice(0, 2)
+    .map((h) => ({ url: h.largeImageURL, credit: `Pixabay/${String(h.user).slice(0, 20)}` }));
 }
 
 async function searchOpenverse(query, retry = true) {
@@ -49,6 +61,7 @@ async function searchOpenverse(query, retry = true) {
   const data = await res.json();
   return (data.results || [])
     .filter((r) => !/\.(svg|gif)$/i.test(r.url) && (!r.width || r.width >= 900))
+    .filter((r) => relevant(query, `${r.title} ${(r.tags || []).map((t) => t.name).join(" ")}`))
     .slice(0, 2)
     .map((r) => ({ url: r.url, credit: cleanCredit(r) }));
 }
@@ -105,7 +118,7 @@ export async function collectImages({ articleImages = [], queries = [], coverIma
   const candidates = articleImages.filter((u) => u !== coverImage).map((url) => ({ url, credit: "Reprodução" }));
   for (const q of queries.slice(0, 3)) {
     let found = 0;
-    for (const search of [searchPixabay, searchPexels, searchOpenverse, searchCommons]) {
+    for (const search of [searchOpenverse, searchPixabay, searchPexels, searchCommons]) {
       if (found >= 2) break; // já achou o suficiente para esta busca
       try {
         const r = await search(q);

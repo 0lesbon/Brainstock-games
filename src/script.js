@@ -13,7 +13,7 @@ const SCHEMA = {
     imageQueries: {
       type: "array",
       items: { type: "string" },
-      description: "3 buscas curtas EM INGLÊS para achar fotos ilustrativas do assunto num banco de imagens (ex.: 'James Webb telescope', 'smartphone battery', 'Brazilian real banknotes')",
+      description: "3 buscas curtas EM INGLÊS (2 a 3 palavras) para achar fotos do assunto em bancos de imagens: as duas primeiras sobre o objeto, empresa, lugar ou pessoa específica da notícia (ex.: 'Lycurgus Cup', 'James Webb telescope', 'Nvidia chip'); a terceira um conceito genérico que ilustre o tema (ex.: 'ancient glass', 'smartphone', 'money coins')",
     },
   },
   required: ["headline", "narration", "caption", "hashtags", "imageQueries"],
