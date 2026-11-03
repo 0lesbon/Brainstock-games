@@ -6,14 +6,52 @@
     "timezone": "America/Sao_Paulo"
   },
   "feeds": [
-    { "source": "g1", "url": "https://g1.globo.com/rss/g1/" },
-    { "source": "g1 Tecnologia", "url": "https://g1.globo.com/rss/g1/tecnologia/" },
-    { "source": "CNN Brasil", "url": "https://www.cnnbrasil.com.br/feed/" },
-    { "source": "Agência Brasil", "url": "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml" }
+    {
+      "source": "g1",
+      "url": "https://g1.globo.com/rss/g1/"
+    },
+    {
+      "source": "g1 Tecnologia",
+      "url": "https://g1.globo.com/rss/g1/tecnologia/"
+    },
+    {
+      "source": "CNN Brasil",
+      "url": "https://www.cnnbrasil.com.br/feed/"
+    },
+    {
+      "source": "Agência Brasil",
+      "url": "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml"
+    }
   ],
   "selection": {
     "maxAgeHours": 12,
-    "blockKeywords": ["morte de criança", "estupro", "suicídio", "horóscopo", "patrocinado", "oferta"]
+    "blockKeywords": [
+      "assista",
+      "ao vivo",
+      "veja o video",
+      "video:",
+      "vídeos:",
+      "boa noite",
+      "bom dia",
+      "edição de",
+      "horóscopo",
+      "patrocinado",
+      "oferta",
+      "resultado da mega",
+      "loterias",
+      "morte de criança",
+      "estupro",
+      "suicídio"
+    ],
+    "blockUrlParts": [
+      "/video/",
+      "/videos/",
+      "globoplay",
+      "/ao-vivo/",
+      "/podcast/",
+      "/live/"
+    ],
+    "minDescriptionChars": 60
   },
   "voice": {
     "voiceId": "21m00Tcm4TlvDq8ikWAM",
@@ -29,7 +67,10 @@
     "targetWords": "110 a 150"
   },
   "publish": {
-    "networks": ["instagram", "youtube"],
+    "networks": [
+      "instagram",
+      "youtube"
+    ],
     "delayMinutes": 15,
     "autoPublish": true
   }

@@ -70,7 +70,7 @@ export async function fetchFeeds(feeds) {
 }
 
 // Escolhe a notícia mais recente que ainda não foi publicada e passa nos filtros.
-export function pickStory(items, { history, maxAgeHours = 12, blockKeywords = [] }) {
+export function pickStory(items, { history, maxAgeHours = 12, blockKeywords = [], blockUrlParts = [], minDescriptionChars = 0 }) {
   const seen = new Set(history.published.map((p) => p.id));
   const seenTitles = history.published.map((p) => normalize(p.title));
   const cutoff = Date.now() - maxAgeHours * 3600 * 1000;
@@ -79,6 +79,9 @@ export function pickStory(items, { history, maxAgeHours = 12, blockKeywords = []
   return items
     .filter((it) => !seen.has(it.id))
     .filter((it) => !it.publishedAt || isNaN(it.publishedAt) || it.publishedAt.getTime() >= cutoff)
+    // pula vídeos, programas de TV e transmissões ao vivo (não viram uma boa matéria para print)
+    .filter((it) => !blockUrlParts.some((p) => it.link.toLowerCase().includes(p)))
+    .filter((it) => it.description.length >= minDescriptionChars)
     .filter((it) => {
       const text = normalize(`${it.title} ${it.description}`);
       return !blocked.some((k) => text.includes(k));
