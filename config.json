@@ -1,0 +1,35 @@
+{
+  "profile": {
+    "name": "PIONEIRO NOTÍCIAS",
+    "handle": "@pioneiro.curioso",
+    "accentColor": "#E11D48",
+    "timezone": "America/Sao_Paulo"
+  },
+  "feeds": [
+    { "source": "g1", "url": "https://g1.globo.com/rss/g1/" },
+    { "source": "g1 Tecnologia", "url": "https://g1.globo.com/rss/g1/tecnologia/" },
+    { "source": "CNN Brasil", "url": "https://www.cnnbrasil.com.br/feed/" },
+    { "source": "Agência Brasil", "url": "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml" }
+  ],
+  "selection": {
+    "maxAgeHours": 12,
+    "blockKeywords": ["morte de criança", "estupro", "suicídio", "horóscopo", "patrocinado", "oferta"]
+  },
+  "voice": {
+    "voiceId": "21m00Tcm4TlvDq8ikWAM",
+    "modelId": "eleven_multilingual_v2",
+    "stability": 0.45,
+    "similarityBoost": 0.8,
+    "style": 0.2,
+    "speed": 1.08
+  },
+  "script": {
+    "model": "claude-opus-5-5",
+    "targetWords": "110 a 150"
+  },
+  "publish": {
+    "networks": ["instagram", "youtube"],
+    "delayMinutes": 15,
+    "autoPublish": true
+  }
+}

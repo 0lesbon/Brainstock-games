@@ -1,0 +1,80 @@
+name: Vídeo de notícia automático
+
+on:
+  schedule:
+    # Horários em UTC (Brasília = UTC-3): ~08h40, ~12h40 e ~18h40
+    - cron: "41 11 * * *"
+    - cron: "41 15 * * *"
+    - cron: "41 21 * * *"
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Link de uma matéria específica (opcional)"
+        required: false
+      publicar:
+        description: "Publicar no Metricool? (desmarque para só gerar o vídeo)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write # criar releases (hospedar o vídeo) e salvar o histórico
+
+concurrency:
+  group: noticias
+  cancel-in-progress: false
+
+jobs:
+  gerar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Dependências do sistema (ffmpeg e fontes)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-inter fonts-dejavu-core
+
+      - name: Dependências do projeto
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Gerar e publicar
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          METRICOOL_USER_TOKEN: ${{ secrets.METRICOOL_USER_TOKEN }}
+          METRICOOL_USER_ID: ${{ secrets.METRICOOL_USER_ID }}
+          METRICOOL_BLOG_ID: ${{ secrets.METRICOOL_BLOG_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_URL: ${{ inputs.url }}
+          INPUT_PUBLICAR: ${{ inputs.publicar }}
+        run: |
+          ARGS=()
+          if [ -n "$INPUT_URL" ]; then ARGS+=(--url "$INPUT_URL"); fi
+          if [ "$INPUT_PUBLICAR" = "false" ]; then ARGS+=(--no-publish); fi
+          node src/run.js "${ARGS[@]}"
+
+      - name: Guardar o vídeo como artefato do workflow
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: video
+          path: out/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Salvar histórico (evita repetir notícia)
+        run: |
+          if ! git diff --quiet state/history.json; then
+            git config user.name "noticias-bot"
+            git config user.email "noticias-bot@users.noreply.github.com"
+            git add state/history.json
+            git commit -m "Histórico: nova notícia publicada"
+            git push
+          fi

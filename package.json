@@ -1,0 +1,17 @@
+{
+  "name": "perfil-noticias-automatico",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Gera e publica automaticamente vídeos curtos de notícia narrados com ElevenLabs.",
+  "scripts": {
+    "start": "node src/run.js",
+    "dry-run": "node src/run.js --dry-run",
+    "test:video": "node src/run.js --dry-run --no-publish"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
+    "playwright": "1.63.0"
+  }
+}
