@@ -105,8 +105,22 @@ export async function captureArticle(url, outPng) {
       return text.slice(0, 8000);
     });
 
-    const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight);
-    const clipH = Math.min(2200, Math.max(800, pageHeight - headlineY));
+    // Corta o print no fim do texto da matéria (evita "você pode gostar", anúncios e comentários)
+    const articleBottom = await page.evaluate(() => {
+      for (const el of document.querySelectorAll('[class*="taboola" i], [id*="taboola" i], [class*="outbrain" i], [class*="mgid" i], [id*="mgid" i], [class*="recommend" i], [class*="related" i]'))
+        el.style.setProperty("display", "none", "important");
+      // o corpo da matéria é o bloco com mais parágrafos longos
+      const groups = new Map();
+      for (const p of document.querySelectorAll("p")) {
+        if (p.innerText.trim().length <= 60) continue;
+        const k = p.parentElement;
+        groups.set(k, [...(groups.get(k) || []), p]);
+      }
+      const body = [...groups.values()].sort((a, b) => b.length - a.length)[0] || [];
+      const last = body[body.length - 1];
+      return last ? last.getBoundingClientRect().bottom + window.scrollY + 40 : document.documentElement.scrollHeight;
+    });
+    const clipH = Math.min(2200, Math.max(800, articleBottom - headlineY));
     await page.screenshot({ path: outPng, clip: { x: 0, y: headlineY, width: 400, height: clipH }, fullPage: true });
     return { articleText, articleImages, ok: true };
   } finally {

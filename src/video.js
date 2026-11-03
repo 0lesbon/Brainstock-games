@@ -84,7 +84,7 @@ export function buildAss({ words, duration, profile, source, credits = [] }) {
   lines.push(`Dialogue: 2,${s},${e},Brand,,0,0,0,,{\\pos(${CARD.x},${CARD.y + CARD.h + 24})\\fs32\\b0\\1a&H40&}Fonte: ${escAss(source)}`);
   lines.push(`Dialogue: 2,0:00:00.00,${e},Small,,0,0,0,,{\\1a&H50&}${escAss(profile.handle)}`);
   for (const c of credits)
-    lines.push(`Dialogue: 2,${assTime(c.start)},${assTime(c.end)},Brand,,0,0,0,,{\\an9\\pos(${CARD.x + CARD.w},${CARD.y + CARD.h + 24})\\fs28\\b0\\1a&H50&}${escAss(c.text)}`);
+    lines.push(`Dialogue: 2,${assTime(c.start)},${assTime(c.end)},Small,,0,0,0,,{\\an9\\pos(${CARD.x + CARD.w - 14},${CARD.y + 12})\\fs26\\bord2\\1a&H20&}${escAss(c.text)}`);
 
   // Legenda palavra por palavra (palavra atual destacada na cor do perfil)
   const chunks = chunkWords(words);

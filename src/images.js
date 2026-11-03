@@ -19,6 +19,15 @@ async function searchPexels(query) {
   return (data.photos || []).map((p) => ({ url: p.src.large2x || p.src.portrait, credit: `Pexels/${p.photographer}` }));
 }
 
+function cleanCredit(r) {
+  let who = (r.creator || "").replace(/\s+/g, " ").trim();
+  const half = who.slice(0, who.length / 2);
+  if (half && who === half + half) who = half; // "Unknown artistUnknown artist"
+  if (!who || /unknown/i.test(who)) who = r.source === "wikimedia" ? "Wikimedia Commons" : r.source || "Openverse";
+  if (who.length > 26) who = who.slice(0, 25).trim() + "…";
+  return `${who} (${(r.license || "").toUpperCase()})`;
+}
+
 async function searchOpenverse(query, retry = true) {
   const params = new URLSearchParams({ q: query, page_size: "4", size: "large", license_type: "commercial", mature: "false" });
   const res = await fetch(`https://api.openverse.org/v1/images/?${params}`, {
@@ -31,7 +40,7 @@ async function searchOpenverse(query, retry = true) {
   return (data.results || [])
     .filter((r) => !/\.(svg|gif)$/i.test(r.url) && (!r.width || r.width >= 900))
     .slice(0, 2)
-    .map((r) => ({ url: r.url, credit: `${(r.creator || r.source || "Openverse").slice(0, 40)} (${(r.license || "").toUpperCase()})` }));
+    .map((r) => ({ url: r.url, credit: cleanCredit(r) }));
 }
 
 async function searchCommons(query) {
