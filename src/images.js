@@ -1,6 +1,6 @@
 // Busca imagens relacionadas à notícia para intercalar no vídeo:
 //   1. fotos da própria matéria (as mais relevantes)
-//   2. Pexels (banco gratuito; precisa de PEXELS_API_KEY, opcional)
+//   2. Pixabay (banco gratuito; precisa de PIXABAY_API_KEY, opcional) e Pexels (PEXELS_API_KEY, opcional)
 //   3. Openverse (gratuito, sem chave; reúne fotos com licença livre do Flickr, Wikimedia etc.)
 //   4. Wikimedia Commons (gratuito, sem chave; reserva caso as outras não achem nada)
 import { execFileSync } from "node:child_process";
@@ -26,6 +26,16 @@ function cleanCredit(r) {
   if (!who || /unknown/i.test(who)) who = r.source === "wikimedia" ? "Wikimedia Commons" : r.source || "Openverse";
   if (who.length > 26) who = who.slice(0, 25).trim() + "…";
   return `${who} (${(r.license || "").toUpperCase()})`;
+}
+
+async function searchPixabay(query) {
+  const key = process.env.PIXABAY_API_KEY;
+  if (!key) return [];
+  const params = new URLSearchParams({ key, q: query.slice(0, 100), image_type: "photo", per_page: "3", safesearch: "true", min_width: "1000" });
+  const res = await fetch(`https://pixabay.com/api/?${params}`, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error(`Pixabay HTTP ${res.status}`);
+  const data = await res.json();
+  return (data.hits || []).slice(0, 2).map((h) => ({ url: h.largeImageURL, credit: `Pixabay/${String(h.user).slice(0, 20)}` }));
 }
 
 async function searchOpenverse(query, retry = true) {
@@ -95,7 +105,7 @@ export async function collectImages({ articleImages = [], queries = [], coverIma
   const candidates = articleImages.filter((u) => u !== coverImage).map((url) => ({ url, credit: "Reprodução" }));
   for (const q of queries.slice(0, 3)) {
     let found = 0;
-    for (const search of [searchPexels, searchOpenverse, searchCommons]) {
+    for (const search of [searchPixabay, searchPexels, searchOpenverse, searchCommons]) {
       if (found >= 2) break; // já achou o suficiente para esta busca
       try {
         const r = await search(q);

@@ -24,7 +24,8 @@ Os assuntos se revezam a cada vídeo (`categories.rotation` em `config.json`).
    | `ELEVENLABS_VOICE_ID` | sua voz (Voice Library). Entra em rodízio com as vozes padrão de `config.json` (`voice.defaultVoices`) | recomendado |
    | `GEMINI_API_KEY` | roteiro escrito pelo Gemini (Google AI Studio) | recomendado |
    | `ANTHROPIC_API_KEY` | alternativa ao Gemini: roteiro pelo Claude | opcional |
-   | `PEXELS_API_KEY` | fotos de banco de imagens mais bonitas (grátis em pexels.com/api) | opcional |
+   | `PIXABAY_API_KEY` | fotos de banco de imagens mais bonitas (grátis em pixabay.com/api/docs) | opcional |
+   | `PEXELS_API_KEY` | idem, Pexels (novas chaves estão pausadas) | opcional |
    | `GMAIL_USER` | Gmail que envia os vídeos (modo e-mail, o padrão) | sim, no modo e-mail |
    | `GMAIL_APP_PASSWORD` | senha de app do Gmail (myaccount.google.com/apppasswords) | sim, no modo e-mail |
    | `EMAIL_TO` | onde receber, se for outro e-mail | opcional |
