@@ -1,1 +1,14 @@
-{ "published": [] }
+{
+  "published": [
+    {
+      "id": "206a4884ec47866b",
+      "title": "Suspeito de matar homem em posto de combustíveis na BA é preso no ES; homem alegou legítima defesa após briga",
+      "link": "https://g1.globo.com/ba/bahia/noticia/2026/11/03/suspeito-da-ba-e-preso-no-es.ghtml",
+      "source": "g1",
+      "voice": "sua voz",
+      "createdAt": "2026-11-03T23:11:12.584Z",
+      "videoUrl": "https://github.com/0lesbon/Brainstock-games/releases/download/video-206a4884ec47866b/video.mp4",
+      "emailedAt": "2026-11-03T23:11:18.462Z"
+    }
+  ]
+}
