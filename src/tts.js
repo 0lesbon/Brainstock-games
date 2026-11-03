@@ -1,10 +1,21 @@
 // Narração com a ElevenLabs. Usa o endpoint "with-timestamps" para sincronizar as legendas palavra por palavra.
 import fs from "node:fs";
 
-export async function narrate(text, voiceCfg, outMp3) {
+// Lista de vozes em rodízio: a sua (secret ELEVENLABS_VOICE_ID, aparece duas vezes para ser a mais usada)
+// + as vozes padrão do config.json. O índice vem do número de vídeos já feitos.
+export function pickVoice(voiceCfg, index) {
+  const own = (process.env.ELEVENLABS_VOICE_ID || "").split(",").map((s) => s.trim()).filter(Boolean);
+  const pool = [
+    ...own.flatMap((id) => [{ name: "sua voz", id }, { name: "sua voz", id }]),
+    ...(voiceCfg.defaultVoices || []),
+  ];
+  if (!pool.length) throw new Error("Nenhuma voz configurada (ELEVENLABS_VOICE_ID ou voice.defaultVoices).");
+  return pool[index % pool.length];
+}
+
+export async function narrate(text, voiceCfg, outMp3, voiceId) {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("Defina ELEVENLABS_API_KEY (sua chave da ElevenLabs).");
-  const voiceId = process.env.ELEVENLABS_VOICE_ID || voiceCfg.voiceId;
 
   const res = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps?output_format=mp3_44100_128`,

@@ -54,12 +54,30 @@
     "minDescriptionChars": 60
   },
   "voice": {
-    "voiceId": "21m00Tcm4TlvDq8ikWAM",
     "modelId": "eleven_multilingual_v2",
     "stability": 0.45,
     "similarityBoost": 0.8,
     "style": 0.2,
-    "speed": 1.08
+    "speed": 1.08,
+    "rotation": "Alterna a cada vídeo entre a voz do secret ELEVENLABS_VOICE_ID e as vozes padrão abaixo. Para usar só a sua voz, deixe defaultVoices vazio.",
+    "defaultVoices": [
+      {
+        "name": "George",
+        "id": "JBFqnCBsd6RMkjVDRZzb"
+      },
+      {
+        "name": "Sarah",
+        "id": "EXAVITQu4vr4xnSDxMaL"
+      },
+      {
+        "name": "Daniel",
+        "id": "onwK4e9ZLuTAKqWW03F9"
+      },
+      {
+        "name": "Matilda",
+        "id": "XrExE9yKIg1WjnnlVkGX"
+      }
+    ]
   },
   "script": {
     "geminiModel": "gemini-2.5-flash",

@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { fetchFeeds, pickStory } from "./news.js";
 import { captureArticle, renderCover } from "./screenshot.js";
 import { writeScript } from "./script.js";
-import { narrate } from "./tts.js";
+import { narrate, pickVoice } from "./tts.js";
 import { renderVideo } from "./video.js";
 import { uploadToGithubRelease, buildMetricoolPost, scheduleOnMetricool } from "./publish.js";
 
@@ -67,8 +67,9 @@ async function main() {
 
   // 4. Capa, narração e vídeo
   await renderCover({ headline: script.headline, source: story.source, image: story.image, profile: cfg.profile, outPng: files.cover });
-  const { words } = await narrate(script.narration, cfg.voice, files.audio);
-  console.log(`[voz] ${words.length} palavras sincronizadas`);
+  const voice = pickVoice(cfg.voice, history.published.length + (opt("--voice-index") ? Number(opt("--voice-index")) : 0));
+  const { words } = await narrate(script.narration, cfg.voice, files.audio, voice.id);
+  console.log(`[voz] ${voice.name}: ${words.length} palavras sincronizadas`);
   const { duration } = renderVideo({
     coverPng: files.cover,
     articlePng: fs.existsSync(files.article) ? files.article : null,
@@ -81,7 +82,7 @@ async function main() {
   });
   console.log(`[video] ${files.video} (${duration.toFixed(1)}s)`);
 
-  const record = { id: story.id, title: story.title, link: story.link, source: story.source, createdAt: new Date().toISOString(), script };
+  const record = { id: story.id, title: story.title, link: story.link, source: story.source, voice: voice.name, createdAt: new Date().toISOString(), script };
 
   // 5. Publicação
   const metricoolReady = ["METRICOOL_USER_TOKEN", "METRICOOL_USER_ID", "METRICOOL_BLOG_ID"].every((k) => process.env[k]);

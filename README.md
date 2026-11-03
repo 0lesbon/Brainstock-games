@@ -18,7 +18,7 @@ dentro de um card, com barra da marca no topo, "Fonte: …" e legenda palavra po
    | Secret | Para quê | Obrigatório |
    |---|---|---|
    | `ELEVENLABS_API_KEY` | narração | sim |
-   | `ELEVENLABS_VOICE_ID` | voz escolhida na Voice Library (escolha uma voz brasileira) | recomendado |
+   | `ELEVENLABS_VOICE_ID` | sua voz (Voice Library). Entra em rodízio com as vozes padrão de `config.json` (`voice.defaultVoices`) | recomendado |
    | `GEMINI_API_KEY` | roteiro escrito pelo Gemini (Google AI Studio) | recomendado |
    | `ANTHROPIC_API_KEY` | alternativa ao Gemini: roteiro pelo Claude | opcional |
    | `METRICOOL_USER_TOKEN` | postagem automática (Metricool → Configurações → API) | para postar |
