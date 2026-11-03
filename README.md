@@ -4,7 +4,7 @@ Gera e publica sozinho vídeos curtos de notícia (Reels / Shorts), narrados com
 
 ```
 RSS dos portais ─► escolhe notícia inédita ─► print da matéria + texto
-      ─► Claude escreve o roteiro ─► ElevenLabs narra (com tempos por palavra)
+      ─► Gemini (ou Claude) escreve o roteiro ─► ElevenLabs narra (com tempos por palavra)
       ─► ffmpeg monta o vídeo 1080x1920 ─► GitHub Releases hospeda ─► Metricool agenda no Instagram/YouTube
 ```
 
@@ -19,7 +19,8 @@ dentro de um card, com barra da marca no topo, "Fonte: …" e legenda palavra po
    |---|---|---|
    | `ELEVENLABS_API_KEY` | narração | sim |
    | `ELEVENLABS_VOICE_ID` | voz escolhida na Voice Library (escolha uma voz brasileira) | recomendado |
-   | `ANTHROPIC_API_KEY` | roteiro escrito pelo Claude (sem ela, narra o resumo do RSS) | recomendado |
+   | `GEMINI_API_KEY` | roteiro escrito pelo Gemini (Google AI Studio) | recomendado |
+   | `ANTHROPIC_API_KEY` | alternativa ao Gemini: roteiro pelo Claude | opcional |
    | `METRICOOL_USER_TOKEN` | postagem automática (Metricool → Configurações → API) | para postar |
    | `METRICOOL_USER_ID` | seu ID de usuário no Metricool | para postar |
    | `METRICOOL_BLOG_ID` | ID da marca (a do `pioneiro.curioso` é `7696558`) | para postar |

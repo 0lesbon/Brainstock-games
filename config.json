@@ -24,7 +24,8 @@
     "speed": 1.08
   },
   "script": {
-    "model": "claude-opus-5-5",
+    "geminiModel": "gemini-2.5-flash",
+    "claudeModel": "claude-opus-5-5",
     "targetWords": "110 a 150"
   },
   "publish": {
