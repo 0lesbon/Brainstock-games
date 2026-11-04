@@ -118,9 +118,9 @@
     "minDescriptionChars": 40
   },
   "voice": {
-    "provider": "misto",
-    "_provider": "google (grátis) | elevenlabs | misto (a cada \"elevenlabsEvery\" vídeos, 1 usa ElevenLabs e os outros Google)",
-    "elevenlabsEvery": 3,
+    "provider": "elevenlabs",
+    "_provider": "elevenlabs (padrão) | google | misto. Na ElevenLabs: vozes padrão na maioria dos vídeos e a sua voz (secret ELEVENLABS_VOICE_ID) a cada \"ownVoiceEvery\" vídeos",
+    "ownVoiceEvery": 3,
     "googleSpeakingRate": 1.1,
     "googleVoices": [
       {

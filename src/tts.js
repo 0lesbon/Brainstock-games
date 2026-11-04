@@ -10,10 +10,17 @@ export function pickVoice(voiceCfg, index) {
   const provider = voiceCfg.provider || "google";
   const google = (voiceCfg.googleVoices || []).map((v) => ({ provider: "google", ...v }));
   const own = (process.env.ELEVENLABS_VOICE_ID || "").split(",").map((s) => s.trim()).filter(Boolean);
-  const eleven = [
-    ...own.flatMap((id) => [{ name: "sua voz", id }, { name: "sua voz", id }]),
-    ...(voiceCfg.defaultVoices || []),
-  ].map((v) => ({ provider: "elevenlabs", ...v }));
+  const defaults = (voiceCfg.defaultVoices || []).map((v) => ({ provider: "elevenlabs", ...v }));
+  const mine = own.map((id) => ({ provider: "elevenlabs", name: "sua voz", id }));
+  const eleven = [...mine, ...defaults];
+
+  // elevenlabs: vozes padrão na maioria dos vídeos e a sua voz a cada "ownVoiceEvery" vídeos
+  if (provider === "elevenlabs" && mine.length && defaults.length) {
+    const every = Math.max(2, voiceCfg.ownVoiceEvery || 3);
+    const round = Math.floor(index / every);
+    if (index % every === every - 1) return mine[round % mine.length];
+    return defaults[(index - round) % defaults.length];
+  }
 
   // misto: a cada N vídeos, 1 sai com ElevenLabs e os outros com Google (economiza créditos da ElevenLabs)
   if (provider === "misto" && google.length && eleven.length) {
