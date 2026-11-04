@@ -109,6 +109,10 @@ export async function captureArticle(url, outPng) {
     // fotografa só as partes da matéria — título, subtítulo, foto principal e primeiros parágrafos —
     // e monta uma imagem com elas, uma embaixo da outra.
     const boxes = await page.evaluate(() => {
+      // remove anúncios e blocos de "você pode gostar" antes de escolher as partes
+      const AD = '[class*="mgid" i], [id*="mgid" i], [class*="taboola" i], [id*="taboola" i], [class*="outbrain" i], [id*="outbrain" i], ins.adsbygoogle, [id*="google_ads" i], [id^="div-gpt" i], [class*="advert" i], [class*="publicidade" i], [class*="recommend" i], [class*="related" i], [data-ad], [data-ad-slot], [class*="ad-slot" i], [class*="ads-" i], [class*="-ads" i]';
+      for (const el of document.querySelectorAll(AD)) el.style.setProperty("display", "none", "important");
+      const isAd = (el) => Boolean(el.closest(AD)) || /mgid|taboola|outbrain|doubleclick|googlesyndication|adservice/i.test(el.currentSrc || el.src || "");
       const promo = /(siga|entre|participe|receba|assine|leia|veja).{0,40}(whatsapp|telegram|canal|newsletter|google|mais|também|resumo)|publicidade/i;
       const visible = (el) => {
         const r = el.getBoundingClientRect();
@@ -123,7 +127,7 @@ export async function captureArticle(url, outPng) {
       const groups = new Map();
       for (const p of document.querySelectorAll("p")) {
         const t = p.innerText.trim();
-        if (t.length <= 60 || promo.test(t) || !visible(p)) continue;
+        if (t.length <= 60 || promo.test(t) || !visible(p) || isAd(p)) continue;
         groups.set(p.parentElement, [...(groups.get(p.parentElement) || []), p]);
       }
       const body = [...groups.values()].sort((a, b) => b.length - a.length)[0] || [];
@@ -148,7 +152,7 @@ export async function captureArticle(url, outPng) {
         const img = [...document.querySelectorAll("img, picture")].find((el) => {
           const r = el.getBoundingClientRect();
           const y = r.top + window.scrollY;
-          return y > h1Bottom && y < limit && r.width >= 250 && r.height >= 140;
+          return y > h1Bottom && y < limit && r.width >= 250 && r.height >= 140 && !isAd(el) && visible(el);
         });
         if (img) out.push(box(img, "photo"));
       }
@@ -161,9 +165,9 @@ export async function captureArticle(url, outPng) {
       const merged = [];
       for (const b of boxes) {
         const prev = merged[merged.length - 1];
-        if (prev && b.y <= prev.y + prev.h + 40 && b.y + b.h - prev.y < 1400) {
+        const textual = (k) => k !== "photo";
+        if (prev && textual(prev.kind) && textual(b.kind) && b.y <= prev.y + prev.h + 40 && b.y + b.h - prev.y < 1400) {
           prev.h = Math.max(prev.h, b.y + b.h - prev.y);
-          prev.kind = prev.kind === "photo" || b.kind === "photo" ? "photo" : prev.kind;
         } else merged.push({ ...b });
       }
       const shots = [];
