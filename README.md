@@ -20,7 +20,8 @@ Os assuntos se revezam a cada vídeo (`categories.rotation` em `config.json`).
 
    | Secret | Para quê | Obrigatório |
    |---|---|---|
-   | `ELEVENLABS_API_KEY` | narração | sim |
+   | `GOOGLE_TTS_API_KEY` | narração com vozes brasileiras do Google (grátis até o limite mensal) | sim |
+   | `ELEVENLABS_API_KEY` | narração com ElevenLabs (`voice.provider` = `elevenlabs` ou `misto`) | opcional |
    | `ELEVENLABS_VOICE_ID` | sua voz (Voice Library). Entra em rodízio com as vozes padrão de `config.json` (`voice.defaultVoices`) | recomendado |
    | `GEMINI_API_KEY` | roteiro escrito pelo Gemini (Google AI Studio) | recomendado |
    | `ANTHROPIC_API_KEY` | alternativa ao Gemini: roteiro pelo Claude | opcional |

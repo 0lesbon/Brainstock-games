@@ -82,8 +82,14 @@ async function main() {
     max: cfg.images?.max ?? 4,
   });
   console.log(`[imagens] ${images.length} imagens: ${images.map((i) => i.credit).join(", ")}`);
-  const voice = pickVoice(cfg.voice, history.published.length + (opt("--voice-index") ? Number(opt("--voice-index")) : 0));
-  const { words } = await narrate(script.narration, cfg.voice, files.audio, voice.id);
+  // Enquanto a chave do Google não estiver cadastrada, continua usando a ElevenLabs
+  const voiceCfg = { ...cfg.voice };
+  if (voiceCfg.provider !== "elevenlabs" && !process.env.GOOGLE_TTS_API_KEY && process.env.ELEVENLABS_API_KEY) {
+    console.warn("[voz] GOOGLE_TTS_API_KEY ausente: usando ElevenLabs por enquanto.");
+    voiceCfg.provider = "elevenlabs";
+  }
+  const voice = pickVoice(voiceCfg, history.published.length + (opt("--voice-index") ? Number(opt("--voice-index")) : 0));
+  const { words } = await narrate(script.narration, voiceCfg, files.audio, voice);
   console.log(`[voz] ${voice.name}: ${words.length} palavras sincronizadas`);
   const { duration, segments } = renderVideo({
     coverPng: files.cover,

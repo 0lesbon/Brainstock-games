@@ -118,12 +118,32 @@
     "minDescriptionChars": 40
   },
   "voice": {
+    "provider": "google",
+    "_provider": "google (grátis, padrão) | elevenlabs | misto (intercala Google e ElevenLabs)",
+    "googleSpeakingRate": 1.1,
+    "googleVoices": [
+      {
+        "name": "Google masculina (Neural2-B)",
+        "id": "pt-BR-Neural2-B"
+      },
+      {
+        "name": "Google feminina (Neural2-A)",
+        "id": "pt-BR-Neural2-A"
+      },
+      {
+        "name": "Google feminina (Neural2-C)",
+        "id": "pt-BR-Neural2-C"
+      },
+      {
+        "name": "Google masculina (Wavenet-B)",
+        "id": "pt-BR-Wavenet-B"
+      }
+    ],
     "modelId": "eleven_multilingual_v2",
     "stability": 0.45,
     "similarityBoost": 0.8,
     "style": 0.2,
     "speed": 1.08,
-    "rotation": "Alterna a cada vídeo entre a voz do secret ELEVENLABS_VOICE_ID e as vozes padrão abaixo. Para usar só a sua voz, deixe defaultVoices vazio.",
     "defaultVoices": [
       {
         "name": "George",
@@ -141,7 +161,8 @@
         "name": "Matilda",
         "id": "XrExE9yKIg1WjnnlVkGX"
       }
-    ]
+    ],
+    "_elevenlabs": "Configurações abaixo só valem para a ElevenLabs."
   },
   "script": {
     "geminiModel": "gemini-2.5-flash",
