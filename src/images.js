@@ -6,6 +6,7 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 
 const UA = "NowNoticiasBot/0.1 (+https://github.com/0lesbon/Brainstock-games)";
 
@@ -47,7 +48,7 @@ async function searchPixabay(query) {
   return (data.hits || [])
     .filter((h) => relevant(query, h.tags))
     .slice(0, 2)
-    .map((h) => ({ url: h.largeImageURL, credit: `Pixabay/${String(h.user).slice(0, 20)}` }));
+    .map((h) => ({ url: h.largeImageURL, key: `pixabay-${h.id}`, credit: `Pixabay/${String(h.user).slice(0, 20)}` }));
 }
 
 async function searchOpenverse(query, retry = true) {
@@ -130,15 +131,24 @@ export async function collectImages({ articleImages = [], queries = [], coverIma
     }
   }
 
+  // descarta repetidas: mesma URL, mesma foto do banco ou mesmo arquivo (a mesma foto pode vir de buscas diferentes)
   const seen = new Set();
+  const seenHashes = new Set();
   const picked = [];
   for (const c of candidates) {
     if (picked.length >= max) break;
-    if (seen.has(c.url)) continue;
-    seen.add(c.url);
+    const key = c.key || c.url;
+    if (seen.has(key)) continue;
+    seen.add(key);
     const file = path.join(outDir, `img-${picked.length + 1}.jpg`);
     try {
       await download(c.url, file);
+      const hash = crypto.createHash("md5").update(fs.readFileSync(file)).digest("hex");
+      if (seenHashes.has(hash)) {
+        fs.rmSync(file, { force: true });
+        continue;
+      }
+      seenHashes.add(hash);
       picked.push({ file, credit: c.credit, url: c.url });
     } catch (err) {
       console.warn(`[imagens] descartada (${err.message}): ${c.url.slice(0, 90)}`);
