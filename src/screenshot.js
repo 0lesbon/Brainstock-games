@@ -111,26 +111,40 @@ export async function captureArticle(url, outPng) {
     const boxes = await page.evaluate(() => {
       // remove anúncios e blocos de "você pode gostar" antes de escolher as partes
       const AD = '[class*="mgid" i], [id*="mgid" i], [class*="taboola" i], [id*="taboola" i], [class*="outbrain" i], [id*="outbrain" i], ins.adsbygoogle, [id*="google_ads" i], [id^="div-gpt" i], [class*="advert" i], [class*="publicidade" i], [class*="recommend" i], [class*="related" i], [data-ad], [data-ad-slot], [class*="ad-slot" i], [class*="ads-" i], [class*="-ads" i]';
-      for (const el of document.querySelectorAll(AD)) el.style.setProperty("display", "none", "important");
-      const isAd = (el) => Boolean(el.closest(AD)) || /mgid|taboola|outbrain|doubleclick|googlesyndication|adservice/i.test(el.currentSrc || el.src || "");
+      // (nunca esconde a página inteira: alguns sites usam "publicidade" na classe do <html>/<body>)
+      const h1el = document.querySelector("article h1, main h1, h1");
+      const isContainer = (el) =>
+        ["HTML", "BODY", "MAIN", "ARTICLE"].includes(el.tagName) || (h1el && el.contains(h1el)) || el.querySelectorAll("p").length > 3;
+      const adBoxes = [...document.querySelectorAll(AD)].filter((el) => !isContainer(el));
+      for (const el of adBoxes) el.style.setProperty("display", "none", "important");
+      const isAd = (el) => adBoxes.some((a) => a.contains(el)) || /mgid|taboola|outbrain|doubleclick|googlesyndication|adservice/i.test(el.currentSrc || el.src || "");
       const promo = /(siga|entre|participe|receba|assine|leia|veja).{0,40}(whatsapp|telegram|canal|newsletter|google|mais|também|resumo)|publicidade/i;
       const visible = (el) => {
         const r = el.getBoundingClientRect();
         const st = getComputedStyle(el);
         return r.width > 120 && r.height > 8 && st.display !== "none" && st.visibility !== "hidden";
       };
+      let n = 0;
       const box = (el, kind) => {
         const r = el.getBoundingClientRect();
-        return { kind, y: r.top + window.scrollY, h: r.height };
+        el.setAttribute("data-nowpart", String(n));
+        return { kind, id: n++, y: r.top + window.scrollY, h: r.height };
       };
       // corpo da matéria = bloco com mais parágrafos longos
+      // (alguns sites, como o g1, põem cada parágrafo num bloco próprio: conta também avô e bisavô)
       const groups = new Map();
       for (const p of document.querySelectorAll("p")) {
         const t = p.innerText.trim();
         if (t.length <= 60 || promo.test(t) || !visible(p) || isAd(p)) continue;
-        groups.set(p.parentElement, [...(groups.get(p.parentElement) || []), p]);
+        let anc = p.parentElement;
+        for (let depth = 0; anc && depth < 3; depth++, anc = anc.parentElement) {
+          const g = groups.get(anc) || { depth, ps: [] };
+          g.ps.push(p);
+          groups.set(anc, g);
+        }
       }
-      const body = [...groups.values()].sort((a, b) => b.length - a.length)[0] || [];
+      const best = [...groups.values()].sort((a, b) => b.ps.length - a.ps.length || a.depth - b.depth)[0];
+      const body = best ? best.ps : [];
       if (body.length < 2) return null;
 
       const h1 = document.querySelector("article h1, main h1, h1");
@@ -161,37 +175,38 @@ export async function captureArticle(url, outPng) {
     });
 
     if (boxes?.length >= 2) {
-      // junta blocos colados (evita linhas repetidas entre um recorte e outro)
-      const merged = [];
-      for (const b of boxes) {
-        const prev = merged[merged.length - 1];
-        const textual = (k) => k !== "photo";
-        if (prev && textual(prev.kind) && textual(b.kind) && b.y <= prev.y + prev.h + 40 && b.y + b.h - prev.y < 1400) {
-          prev.h = Math.max(prev.h, b.y + b.h - prev.y);
-        } else merged.push({ ...b });
-      }
+      // cada parte é fotografada no seu contorno exato (nada do que está entre elas entra);
+      // a captura por elemento mede a posição na hora, mesmo se a página se mexer carregando imagens
       const shots = [];
-      for (const b of merged) {
-        await page.evaluate((y) => window.scrollTo(0, Math.max(0, y - 200)), b.y);
-        await page.waitForTimeout(b.kind === "photo" ? 900 : 200); // imagens com carregamento tardio
-        // avisos de cookies/barras fixas que aparecem depois de rolar
-        await page.evaluate(() => {
-          const h1 = document.querySelector("article h1, main h1, h1");
-          for (const el of document.querySelectorAll("body *")) {
-            if (h1 && el.contains(h1)) continue;
-            const st = getComputedStyle(el);
-            if (st.position === "fixed" || st.position === "sticky") el.style.setProperty("display", "none", "important");
-          }
-        });
-        const buf = await page.screenshot({
-          clip: { x: 0, y: Math.max(0, b.y - 6), width: 400, height: Math.min(1400, b.h + 12) },
-          fullPage: true,
-        });
-        shots.push(buf.toString("base64"));
+      for (const b of boxes) {
+        const part = page.locator(`[data-nowpart="${b.id}"]`).first();
+        try {
+          await part.scrollIntoViewIfNeeded({ timeout: 5000 });
+          await page.waitForTimeout(b.kind === "photo" ? 900 : 150); // imagens com carregamento tardio
+          await page.evaluate(() => {
+            const h1 = document.querySelector("article h1, main h1, h1");
+            for (const el of document.querySelectorAll("body *")) {
+              if (h1 && el.contains(h1)) continue;
+              const st = getComputedStyle(el);
+              if (st.position === "fixed" || st.position === "sticky") el.style.setProperty("display", "none", "important");
+            }
+          });
+          shots.push({ kind: b.kind, b64: (await part.screenshot({ timeout: 10000 })).toString("base64") });
+        } catch (err) {
+          console.warn(`[print] parte ${b.kind} ignorada: ${err.message.split("\n")[0]}`);
+        }
       }
       const compose = await browser.newPage({ viewport: { width: 400, height: 800 }, deviceScaleFactor: 2.7 });
       await compose.setContent(`<!doctype html><html><body style="margin:0;background:#fff">
-        ${shots.map((b) => `<img src="data:image/png;base64,${b}" style="display:block;width:400px;margin:0 0 14px">`).join("")}
+        <div style="padding:14px 0 4px">
+        ${shots
+          .map((x) =>
+            x.kind === "photo"
+              ? `<img src="data:image/png;base64,${x.b64}" style="display:block;width:100%;margin:0 0 16px">`
+              : `<img src="data:image/png;base64,${x.b64}" style="display:block;max-width:368px;margin:0 auto 16px">`,
+          )
+          .join("")}
+        </div>
       </body></html>`);
       await compose.waitForLoadState("load");
       await compose.screenshot({ path: outPng, fullPage: true });
