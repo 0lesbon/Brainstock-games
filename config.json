@@ -118,8 +118,9 @@
     "minDescriptionChars": 40
   },
   "voice": {
-    "provider": "google",
-    "_provider": "google (grátis, padrão) | elevenlabs | misto (intercala Google e ElevenLabs)",
+    "provider": "misto",
+    "_provider": "google (grátis) | elevenlabs | misto (a cada \"elevenlabsEvery\" vídeos, 1 usa ElevenLabs e os outros Google)",
+    "elevenlabsEvery": 3,
     "googleSpeakingRate": 1.1,
     "googleVoices": [
       {

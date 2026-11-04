@@ -15,12 +15,14 @@ export function pickVoice(voiceCfg, index) {
     ...(voiceCfg.defaultVoices || []),
   ].map((v) => ({ provider: "elevenlabs", ...v }));
 
-  const mixed = [];
-  for (let i = 0; i < Math.max(google.length, eleven.length); i++) {
-    if (google[i]) mixed.push(google[i]);
-    if (eleven[i]) mixed.push(eleven[i]);
+  // misto: a cada N vídeos, 1 sai com ElevenLabs e os outros com Google (economiza créditos da ElevenLabs)
+  if (provider === "misto" && google.length && eleven.length) {
+    const every = Math.max(2, voiceCfg.elevenlabsEvery || 3);
+    const round = Math.floor(index / every);
+    if (index % every === every - 1) return eleven[round % eleven.length];
+    return google[(index - round) % google.length];
   }
-  const pool = provider === "elevenlabs" ? eleven : provider === "misto" ? mixed : google;
+  const pool = provider === "elevenlabs" ? eleven : provider === "google" ? google : google.length ? google : eleven;
   if (!pool.length) throw new Error(`Nenhuma voz configurada para o provedor "${provider}".`);
   return pool[index % pool.length];
 }
