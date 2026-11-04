@@ -105,23 +105,96 @@ export async function captureArticle(url, outPng) {
       return text.slice(0, 8000);
     });
 
-    // Corta o print no fim do texto da matéria (evita "você pode gostar", anúncios e comentários)
-    const articleBottom = await page.evaluate(() => {
-      for (const el of document.querySelectorAll('[class*="taboola" i], [id*="taboola" i], [class*="outbrain" i], [class*="mgid" i], [id*="mgid" i], [class*="recommend" i], [class*="related" i]'))
-        el.style.setProperty("display", "none", "important");
-      // o corpo da matéria é o bloco com mais parágrafos longos
+    // Print "limpo": em vez de um recorte contínuo da página (que pega botões, anúncios e espaços vazios),
+    // fotografa só as partes da matéria — título, subtítulo, foto principal e primeiros parágrafos —
+    // e monta uma imagem com elas, uma embaixo da outra.
+    const boxes = await page.evaluate(() => {
+      const promo = /(siga|entre|participe|receba|assine|leia|veja).{0,40}(whatsapp|telegram|canal|newsletter|google|mais|também|resumo)|publicidade/i;
+      const visible = (el) => {
+        const r = el.getBoundingClientRect();
+        const st = getComputedStyle(el);
+        return r.width > 120 && r.height > 8 && st.display !== "none" && st.visibility !== "hidden";
+      };
+      const box = (el, kind) => {
+        const r = el.getBoundingClientRect();
+        return { kind, y: r.top + window.scrollY, h: r.height };
+      };
+      // corpo da matéria = bloco com mais parágrafos longos
       const groups = new Map();
       for (const p of document.querySelectorAll("p")) {
-        if (p.innerText.trim().length <= 60) continue;
-        const k = p.parentElement;
-        groups.set(k, [...(groups.get(k) || []), p]);
+        const t = p.innerText.trim();
+        if (t.length <= 60 || promo.test(t) || !visible(p)) continue;
+        groups.set(p.parentElement, [...(groups.get(p.parentElement) || []), p]);
       }
       const body = [...groups.values()].sort((a, b) => b.length - a.length)[0] || [];
-      const last = body[body.length - 1];
-      return last ? last.getBoundingClientRect().bottom + window.scrollY + 40 : document.documentElement.scrollHeight;
+      if (body.length < 2) return null;
+
+      const h1 = document.querySelector("article h1, main h1, h1");
+      const out = [];
+      const bodyTop = body[0].getBoundingClientRect().top + window.scrollY;
+      if (h1 && visible(h1)) {
+        out.push(box(h1, "title"));
+        const h1Bottom = h1.getBoundingClientRect().bottom + window.scrollY;
+        // subtítulo: primeiro texto médio logo abaixo do título
+        const sub = [...document.querySelectorAll("h2, p, div")].find((el) => {
+          const y = el.getBoundingClientRect().top + window.scrollY;
+          const t = (el.innerText || "").trim();
+          return y > h1Bottom - 2 && y < h1Bottom + 260 && y < bodyTop && t.length > 40 && t.length < 400 &&
+            el.children.length <= 2 && !promo.test(t) && visible(el) && !body.includes(el);
+        });
+        if (sub) out.push(box(sub, "subtitle"));
+        // foto principal: primeira imagem grande entre o título e o fim do 2º parágrafo
+        const limit = body[Math.min(1, body.length - 1)].getBoundingClientRect().bottom + window.scrollY;
+        const img = [...document.querySelectorAll("img, picture")].find((el) => {
+          const r = el.getBoundingClientRect();
+          const y = r.top + window.scrollY;
+          return y > h1Bottom && y < limit && r.width >= 250 && r.height >= 140;
+        });
+        if (img) out.push(box(img, "photo"));
+      }
+      for (const p of body.slice(0, 4)) out.push(box(p, "paragraph"));
+      return out.sort((a, b) => a.y - b.y);
     });
-    const clipH = Math.min(2200, Math.max(800, articleBottom - headlineY));
-    await page.screenshot({ path: outPng, clip: { x: 0, y: headlineY, width: 400, height: clipH }, fullPage: true });
+
+    if (boxes?.length >= 2) {
+      // junta blocos colados (evita linhas repetidas entre um recorte e outro)
+      const merged = [];
+      for (const b of boxes) {
+        const prev = merged[merged.length - 1];
+        if (prev && b.y <= prev.y + prev.h + 40 && b.y + b.h - prev.y < 1400) {
+          prev.h = Math.max(prev.h, b.y + b.h - prev.y);
+          prev.kind = prev.kind === "photo" || b.kind === "photo" ? "photo" : prev.kind;
+        } else merged.push({ ...b });
+      }
+      const shots = [];
+      for (const b of merged) {
+        await page.evaluate((y) => window.scrollTo(0, Math.max(0, y - 200)), b.y);
+        await page.waitForTimeout(b.kind === "photo" ? 900 : 200); // imagens com carregamento tardio
+        // avisos de cookies/barras fixas que aparecem depois de rolar
+        await page.evaluate(() => {
+          const h1 = document.querySelector("article h1, main h1, h1");
+          for (const el of document.querySelectorAll("body *")) {
+            if (h1 && el.contains(h1)) continue;
+            const st = getComputedStyle(el);
+            if (st.position === "fixed" || st.position === "sticky") el.style.setProperty("display", "none", "important");
+          }
+        });
+        const buf = await page.screenshot({
+          clip: { x: 0, y: Math.max(0, b.y - 6), width: 400, height: Math.min(1400, b.h + 12) },
+          fullPage: true,
+        });
+        shots.push(buf.toString("base64"));
+      }
+      const compose = await browser.newPage({ viewport: { width: 400, height: 800 }, deviceScaleFactor: 2.7 });
+      await compose.setContent(`<!doctype html><html><body style="margin:0;background:#fff">
+        ${shots.map((b) => `<img src="data:image/png;base64,${b}" style="display:block;width:400px;margin:0 0 14px">`).join("")}
+      </body></html>`);
+      await compose.waitForLoadState("load");
+      await compose.screenshot({ path: outPng, fullPage: true });
+    } else {
+      // reserva: recorte contínuo a partir do título
+      await page.screenshot({ path: outPng, clip: { x: 0, y: headlineY, width: 400, height: 1400 }, fullPage: true });
+    }
     return { articleText, articleImages, ok: true };
   } finally {
     await browser.close();
