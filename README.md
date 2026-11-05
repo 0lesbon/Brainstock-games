@@ -42,8 +42,8 @@ Os assuntos se revezam a cada vídeo (`categories.rotation` em `config.json`).
 
 ## Rodando
 
-- **Automático:** o workflow acorda de hora em hora e gera até 3 vídeos por dia, entre 8h e 22h (Brasília),
-  com pelo menos 3h30 entre eles (`schedule` em `config.json`). Isso contorna os atrasos do agendamento do GitHub.
+- **Automático:** o workflow acorda de hora em hora e gera até 3 vídeos por dia, entre 8h e 19h (Brasília),
+  com pelo menos 3h entre eles (`schedule` em `config.json`). Isso contorna os atrasos do agendamento do GitHub.
 - **Manual:** aba *Actions → Vídeo de notícia automático → Run workflow*. Dá para colar o link de uma matéria
   específica e desmarcar "Publicar" para só gerar o vídeo (ele fica disponível como artefato do workflow).
 - **Local:**
