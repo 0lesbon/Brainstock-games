@@ -2,10 +2,10 @@ name: Vídeo de notícia automático
 
 on:
   schedule:
-    # Horários em UTC (Brasília = UTC-3): ~08h40, ~12h40 e ~18h40
-    - cron: "41 11 * * *"
-    - cron: "41 15 * * *"
-    - cron: "41 21 * * *"
+    # Acorda de hora em hora (o agendamento do GitHub atrasa e pula horários).
+    # O job "agenda" decide se é hora de um vídeo: janela, limite por dia e intervalo
+    # ficam em config.json -> "schedule".
+    - cron: "17 * * * *"
   workflow_dispatch:
     inputs:
       url:
@@ -24,7 +24,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  agenda:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: decide
+        name: É hora de um vídeo?
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; echo "[agenda] disparo manual"
+          else
+            node src/should-run.js
+          fi
+
   gerar:
+    needs: agenda
+    if: needs.agenda.outputs.run == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     # As chaves estão guardadas neste ambiente (Settings > Environments)
@@ -85,5 +103,6 @@ jobs:
             git config user.email "noticias-bot@users.noreply.github.com"
             git add state/history.json
             git commit -m "Histórico: nova notícia publicada"
+            git pull --rebase -q origin "$GITHUB_REF_NAME" || true
             git push
           fi
