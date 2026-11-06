@@ -64,6 +64,17 @@
       "createdAt": "2026-11-05T16:15:12.902Z",
       "videoUrl": null,
       "emailedAt": "2026-11-05T16:15:23.297Z"
+    },
+    {
+      "id": "459d66617319418f",
+      "title": "Após supermercados, hackers atacam freezers de bancos de sangue na França",
+      "link": "https://tecnoblog.net/noticias/apos-supermercados-hackers-atacam-freezers-de-bancos-de-sangue-na-franca/",
+      "source": "Tecnoblog",
+      "category": "tecnologia",
+      "voice": "George",
+      "createdAt": "2026-11-06T18:00:53.063Z",
+      "videoUrl": "https://github.com/0lesbon/Brainstock-games/releases/download/video-459d66617319418f/video.mp4",
+      "emailedAt": "2026-11-06T18:01:03.684Z"
     }
   ]
 }
