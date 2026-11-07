@@ -2,7 +2,8 @@ name: Vídeo de notícia automático
 
 on:
   schedule:
-    # Acorda de hora em hora (o agendamento do GitHub atrasa e pula horários).
+    # Acorda de hora em hora (o agendamento do GitHub atrasa e pula horários; o disparo
+    # principal vem de uma tarefa agendada externa que chama workflow_dispatch).
     # O job "agenda" decide se é hora de um vídeo: janela, limite por dia e intervalo
     # ficam em config.json -> "schedule".
     - cron: "17 * * * *"
@@ -15,6 +16,10 @@ on:
         description: "Enviar/publicar? (desmarque para só gerar o vídeo)"
         type: boolean
         default: true
+      forcar:
+        description: "Gerar agora, ignorando o limite diário e o horário"
+        type: boolean
+        default: false
 
 permissions:
   contents: write # criar releases (hospedar o vídeo) e salvar o histórico
@@ -34,8 +39,8 @@ jobs:
       - id: decide
         name: É hora de um vídeo?
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"; echo "[agenda] disparo manual"
+          if [ "${{ inputs.forcar }}" = "true" ] || [ "${{ inputs.publicar }}" = "false" ] || [ -n "${{ inputs.url }}" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; echo "[agenda] disparo manual forçado"
           else
             node src/should-run.js
           fi
