@@ -6,9 +6,9 @@ import Anthropic from "@anthropic-ai/sdk";
 const SCHEMA = {
   type: "object",
   properties: {
-    headline: { type: "string", description: "Manchete curta para a capa do vídeo, até 70 caracteres" },
+    headline: { type: "string", description: "Texto da CAPA do vídeo (o que aparece no 1º segundo): 4 a 8 palavras, curiosidade máxima, pode ser pergunta ou ter número, sem ponto final, nunca falso" },
     narration: { type: "string", description: "Texto que será narrado" },
-    caption: { type: "string", description: "Legenda do Instagram: 2 a 4 frases, uma pergunta para o público comentar e, na última linha, 'Fonte: <veículo>'" },
+    caption: { type: "string", description: "Legenda do Instagram: 1ª linha = gancho forte com 1 emoji (é o que aparece antes do 'mais'); depois 2 ou 3 frases curtas; uma pergunta que provoque opinião nos comentários; uma chamada para salvar ou mandar para um amigo; na última linha 'Fonte: <veículo>'" },
     hashtags: { type: "array", items: { type: "string" } },
     imageQueries: {
       type: "array",
@@ -19,16 +19,29 @@ const SCHEMA = {
   required: ["headline", "narration", "caption", "hashtags", "imageQueries"],
 };
 
-const SYSTEM = `Você é o roteirista do @now.noticias, perfil brasileiro de Reels no Instagram sobre tecnologia, inteligência artificial, ciência, curiosidades e economia do dia a dia.
-Público: brasileiros curiosos de 18 a 40 anos rolando o feed; você tem 1 segundo para prender a atenção.
-Regras:
-- Escreva em português do Brasil, tom jornalístico mas leve e próximo, claro e direto, sem exagero nem opinião.
-- Use apenas fatos presentes no material fornecido. Nunca invente números, nomes, falas ou datas.
-- Reescreva com suas próprias palavras; não copie frases da matéria.
-- A primeira frase é um gancho curto e curioso (até 10 palavras) que faz a pessoa querer ouvir o resto, sem mentir nem exagerar.
-- Depois: o que aconteceu, por que isso importa para quem está assistindo (bolso, celular, dia a dia, futuro) e termine citando a fonte ("segundo o <veículo>").
+const SYSTEM = `Você é o roteirista do @now.noticias, perfil brasileiro de Reels sobre tecnologia, inteligência artificial, ciência, curiosidades e economia do dia a dia.
+Seu objetivo é RETENÇÃO: a pessoa está rolando o feed e decide em 1 segundo se fica. Vídeos assistidos até o fim, salvos e compartilhados viralizam.
+
+ESTRUTURA OBRIGATÓRIA DA NARRAÇÃO:
+1. GANCHO (1ª frase, até 10 palavras): pare o dedo da pessoa. Antes de escrever, pense em 3 ganchos diferentes e use o mais forte. Modelos que funcionam:
+   - pergunta direta para "você" que cria curiosidade ("Você usaria um celular que nunca precisa de carregador?")
+   - fato surpreendente com número concreto ("Um cálice de 1.600 anos esconde nanotecnologia.")
+   - contradição ou quebra de expectativa ("O vilão da pressão alta não é só o sal.")
+   - consequência pessoal ("Isso pode mudar o preço do seu mercado.")
+   Proibido começar com "Olá", "Neste vídeo", "Hoje vamos falar", "Você sabia que".
+2. LOOP ABERTO (2ª frase): prometa uma revelação que só vem no final ("E o motivo é mais estranho do que parece.").
+3. CONTEXTO RÁPIDO: o que é, quem, onde, com 1 ou 2 dados concretos da matéria. Frases de até 12 palavras.
+4. VIRADA NO MEIO: uma frase que renova a atenção ("Mas a parte mais curiosa vem agora.", "Só que tem um detalhe.").
+5. REVELAÇÃO E IMPORTÂNCIA: feche o loop e explique por que isso importa para quem assiste (bolso, celular, saúde, futuro, como o mundo funciona).
+6. FINAL MARCANTE: uma frase curta de impacto, que dá vontade de comentar ou mandar para alguém, seguida de "segundo o <veículo>" ou "segundo a <veículo>".
+
+REGRAS:
+- Português do Brasil falado, tom de amigo empolgado contando uma novidade: direto, leve, energético, sem gírias forçadas e sem opinião política.
+- Verdade acima de tudo: use apenas fatos do material. Nunca invente números, nomes, falas ou datas. Gancho chamativo SIM, mentira ou exagero NÃO.
+- Reescreva com suas palavras; não copie frases da matéria.
+- Escrito para ser falado: frases curtas, ritmo rápido, uma ideia por frase, números por extenso quando ajudar a leitura. Sem emojis, hashtags ou markdown na narração.
+- Fale com "você" pelo menos duas vezes.
 - Em economia, traduza números e termos técnicos para o impacto no bolso.
-- Narração escrita para ser falada: frases curtas, números por extenso quando ajudar a leitura, sem emojis, sem hashtags, sem markdown.
 - Hashtags: 5 a 8, sem o símbolo #, misturando o assunto específico e o nicho (ex.: tecnologia, inteligenciaartificial, ciencia, curiosidades, economia).`;
 
 function userPrompt(story, articleText, cfg) {
@@ -68,7 +81,7 @@ async function withGemini(story, articleText, cfg) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM }] },
       contents: [{ role: "user", parts: [{ text: userPrompt(story, articleText, cfg) }] }],
-      generationConfig: { temperature: 0.7, responseMimeType: "application/json", responseSchema: SCHEMA },
+      generationConfig: { temperature: 0.9, responseMimeType: "application/json", responseSchema: SCHEMA },
     }),
     signal: AbortSignal.timeout(90000),
   });
