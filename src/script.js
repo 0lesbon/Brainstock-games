@@ -41,6 +41,11 @@ Texto da matéria:
 ${articleText || "(não foi possível extrair o texto; use só título e resumo)"}
 
 Assunto do perfil para este vídeo: ${story.category}.
+${story.category === "ciencia" ? `Este é um vídeo de DIVULGAÇÃO CIENTÍFICA ATEMPORAL: ele precisa continuar fazendo sentido se alguém assistir daqui a meses.
+- Não use referências de tempo relativas ("hoje", "ontem", "nesta semana", "recentemente", "acaba de"); se a data importar, diga o ano.
+- Foque no conhecimento: explique o fenômeno ou a descoberta, como funciona e por que é curioso ou importante, como um professor empolgado.
+- Termine com um fato curioso ou uma reflexão que dê vontade de salvar e compartilhar o vídeo, e só então cite a fonte.
+- Na legenda, nada de "hoje"/"nesta semana"; convide a pessoa a salvar o vídeo.` : ""}
 Escreva uma narração de ${cfg.targetWords} palavras (30 a 40 segundos falados).`;
 }
 

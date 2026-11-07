@@ -72,15 +72,18 @@ export async function fetchFeeds(feeds) {
 
 // Escolhe a notícia mais recente que ainda não foi publicada e passa nos filtros.
 // Se preferCategory for informado, dá preferência a esse assunto (rodízio de nichos).
-export function pickStory(items, { history, preferCategory, maxAgeHours = 12, blockKeywords = [], blockUrlParts = [], minDescriptionChars = 0 }) {
+export function pickStory(items, { history, preferCategory, maxAgeHours = 12, maxAgeHoursByCategory = {}, blockKeywords = [], blockUrlParts = [], minDescriptionChars = 0 }) {
   const seen = new Set(history.published.map((p) => p.id));
   const seenTitles = history.published.map((p) => normalize(p.title));
-  const cutoff = Date.now() - maxAgeHours * 3600 * 1000;
   const blocked = blockKeywords.map(normalize);
 
   return items
     .filter((it) => !seen.has(it.id))
-    .filter((it) => !it.publishedAt || isNaN(it.publishedAt) || it.publishedAt.getTime() >= cutoff)
+    .filter((it) => {
+      if (!it.publishedAt || isNaN(it.publishedAt)) return true;
+      const hours = Number(maxAgeHoursByCategory[it.category]) || maxAgeHours;
+      return it.publishedAt.getTime() >= Date.now() - hours * 3600 * 1000;
+    })
     // pula vídeos, programas de TV e transmissões ao vivo (não viram uma boa matéria para print)
     .filter((it) => !blockUrlParts.some((p) => it.link.toLowerCase().includes(p)))
     .filter((it) => it.description.length >= minDescriptionChars)

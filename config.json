@@ -65,6 +65,36 @@
       "category": "economia",
       "source": "Agência Brasil",
       "url": "https://agenciabrasil.ebc.com.br/rss/economia/feed.xml"
+    },
+    {
+      "category": "ciencia",
+      "source": "Revista Pesquisa FAPESP",
+      "url": "https://revistapesquisa.fapesp.br/feed/"
+    },
+    {
+      "category": "ciencia",
+      "source": "Ciência Hoje",
+      "url": "https://cienciahoje.org.br/feed/"
+    },
+    {
+      "category": "ciencia",
+      "source": "Canaltech",
+      "url": "https://canaltech.com.br/rss/ciencia/"
+    },
+    {
+      "category": "ciencia",
+      "source": "Olhar Digital",
+      "url": "https://olhardigital.com.br/ciencia-e-espaco/feed/"
+    },
+    {
+      "category": "ciencia",
+      "source": "Superinteressante",
+      "url": "https://super.abril.com.br/ciencia/feed/"
+    },
+    {
+      "category": "ciencia",
+      "source": "Socientífica",
+      "url": "https://socientifica.com.br/feed/"
     }
   ],
   "selection": {
@@ -102,7 +132,14 @@
       "senado",
       "câmara dos deputados",
       "stf",
-      "partido"
+      "partido",
+      "inscrições",
+      "edital",
+      "vestibular",
+      "recrutamento",
+      "processo seletivo",
+      "concurso público",
+      "matrículas"
     ],
     "blockUrlParts": [
       "/video/",
@@ -115,7 +152,11 @@
       "/cupons/",
       "/review/"
     ],
-    "minDescriptionChars": 40
+    "minDescriptionChars": 40,
+    "maxAgeHoursByCategory": {
+      "_info": "Ciência aceita matérias mais antigas, porque o conteúdo é atemporal",
+      "ciencia": 336
+    }
   },
   "voice": {
     "provider": "elevenlabs",
@@ -179,11 +220,14 @@
     "autoPublish": true
   },
   "categories": {
-    "_rotacao": "Ordem dos assuntos, um por vídeo. Repita um nome para ele aparecer mais vezes.",
+    "_rotacao": "Ordem dos assuntos, um por vídeo. Ciência aparece mais vezes (divulgação científica atemporal).",
     "rotation": [
+      "ciencia",
       "tecnologia",
       "ciencia",
-      "economia"
+      "economia",
+      "ciencia",
+      "tecnologia"
     ],
     "labels": {
       "tecnologia": "TECNOLOGIA",
