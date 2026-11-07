@@ -114,7 +114,34 @@ function validate(s) {
     if (typeof s[k] !== "string" || !s[k].trim()) throw new Error(`campo ${k} vazio`);
   if (!Array.isArray(s.hashtags)) s.hashtags = [];
   if (!Array.isArray(s.imageQueries)) s.imageQueries = [];
+  s.caption = formatCaption(s.caption);
   return s;
+}
+
+// Garante a legenda em blocos (o modelo às vezes devolve tudo grudado: "universo?Salve este vídeo")
+export function formatCaption(text) {
+  let t = text.replace(/\r/g, "").trim();
+  t = t.replace(/([.!?…])(?=[A-ZÀ-Ý0-9])/g, "$1 "); // espaço que faltou depois da pontuação
+  t = t.replace(/(\p{Extended_Pictographic}\uFE0F?)(?=[A-Za-zÀ-ÿ0-9])/gu, "$1\n\n"); // emoji do gancho seguido de texto
+  t = t.replace(/\s*(Fonte:)/, "\n\n$1");
+  // blocos: gancho | resumo (até 2 frases) | pergunta | chamada para salvar | fonte
+  const blocks = t.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+  if (blocks.length < 4) {
+    const out = [];
+    for (const b of blocks) {
+      if (/^Fonte:/.test(b) || out.length === 0) {
+        out.push(b);
+        continue;
+      }
+      const sentences = b.split(/(?<=[.!?…])\s+/).filter(Boolean);
+      const lead = [];
+      while (sentences.length && lead.length < 2 && !/\?$/.test(sentences[0])) lead.push(sentences.shift());
+      if (lead.length) out.push(lead.join(" "));
+      out.push(...sentences);
+    }
+    t = out.join("\n\n");
+  }
+  return t.replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function fallbackScript(story) {
