@@ -139,7 +139,17 @@
       "recrutamento",
       "processo seletivo",
       "concurso público",
-      "matrículas"
+      "matrículas",
+      "impeachment",
+      "ex-presidente",
+      "presidente da república",
+      "prisão",
+      "preso",
+      "promotor",
+      "deputado",
+      "senador",
+      "ministro do stf",
+      "governo federal"
     ],
     "blockUrlParts": [
       "/video/",
@@ -245,6 +255,6 @@
     "startHour": 8,
     "endHour": 19,
     "videosPerDay": 3,
-    "minHoursBetween": 3
+    "minHoursBetween": 2.5
   }
 }
