@@ -16,6 +16,10 @@ on:
         description: "Enviar/publicar? (desmarque para só gerar o vídeo)"
         type: boolean
         default: true
+      modo:
+        description: "noticia (print + fotos) ou video (vídeo da NASA narrado)"
+        required: false
+        default: "noticia"
       forcar:
         description: "Gerar agora, ignorando o limite diário e o horário"
         type: boolean
@@ -86,10 +90,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INPUT_URL: ${{ inputs.url }}
           INPUT_PUBLICAR: ${{ inputs.publicar }}
+          INPUT_MODO: ${{ inputs.modo }}
         run: |
           ARGS=()
           if [ -n "$INPUT_URL" ]; then ARGS+=(--url "$INPUT_URL"); fi
           if [ "$INPUT_PUBLICAR" = "false" ]; then ARGS+=(--no-publish); fi
+          if [ "$INPUT_MODO" = "video" ]; then ARGS+=(--modo video); fi
           node src/run.js "${ARGS[@]}"
 
       - name: Guardar o vídeo como artefato do workflow

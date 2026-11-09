@@ -12,7 +12,7 @@ const FPS = 30;
 const COVER_SECONDS = 3;
 const CARD = { x: 60, y: 300, w: 960, h: 1130 };
 
-function probeDuration(file) {
+export function probeDuration(file) {
   const out = execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]);
   return parseFloat(out.toString().trim());
 }
@@ -22,7 +22,7 @@ function pngSize(file) {
   return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
 }
 
-function assTime(t) {
+export function assTime(t) {
   const cs = Math.max(0, Math.round(t * 100));
   const h = Math.floor(cs / 360000);
   const m = Math.floor((cs % 360000) / 6000);
@@ -31,16 +31,16 @@ function assTime(t) {
 }
 
 // "#RRGGBB" -> "&H00BBGGRR" (formato de cor do ASS)
-function assColor(hex) {
+export function assColor(hex) {
   const h = hex.replace("#", "");
   return `&H00${h.slice(4, 6)}${h.slice(2, 4)}${h.slice(0, 2)}`.toUpperCase();
 }
 
-function escAss(s) {
+export function escAss(s) {
   return s.replace(/[{}]/g, "").replace(/\\/g, "");
 }
 
-function chunkWords(words, maxWords = 3, maxChars = 20) {
+export function chunkWords(words, maxWords = 3, maxChars = 20) {
   const chunks = [];
   let cur = [];
   for (const w of words) {

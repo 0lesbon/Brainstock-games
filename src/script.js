@@ -146,7 +146,7 @@ async function geminiJson({ system, user, schema, cfg }) {
   return JSON.parse(text);
 }
 
-async function claudeJson({ system, user, schema, cfg, effort = "medium" }) {
+export async function claudeJson({ system, user, schema, cfg, effort = "medium" }) {
   const client = new Anthropic();
   const stream = client.beta.messages.stream({
     model: cfg.claudeModel || "claude-opus-5-5",

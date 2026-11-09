@@ -260,5 +260,22 @@
     "endHour": 19,
     "videosPerDay": 3,
     "minHoursBetween": 2.5
+  },
+  "videoNews": {
+    "_info": "Modo vídeo narrado: vídeos completos da NASA (domínio público) com narração explicando o que aparece na tela.",
+    "queries": [
+      "Artemis",
+      "International Space Station",
+      "Earth from space",
+      "rocket launch",
+      "Mars rover",
+      "James Webb",
+      "hurricane from space",
+      "solar eclipse",
+      "spacewalk",
+      "aurora"
+    ],
+    "yearStart": 2024,
+    "targetSeconds": 35
   }
 }

@@ -6,6 +6,7 @@
 //   node src/run.js --url <link>    usa uma matéria específica em vez de buscar nos feeds
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { fetchFeeds, rankStories } from "./news.js";
 import { captureArticle, renderCover } from "./screenshot.js";
@@ -15,6 +16,7 @@ import { renderVideo } from "./video.js";
 import { collectImages } from "./images.js";
 import { uploadToGithubRelease, buildMetricoolPost, scheduleOnMetricool } from "./publish.js";
 import { emailReady, sendVideoEmail } from "./email.js";
+import { findNasaVideo, chooseVideo, downloadNasaVideo, extractFrames, writeVideoScript, renderNarratedVideo } from "./videonews.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -25,7 +27,68 @@ const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, "config.json"), "utf8"));
 const historyPath = path.join(ROOT, "state", "history.json");
 const history = JSON.parse(fs.readFileSync(historyPath, "utf8"));
 
+// Modo "vídeo narrado": vídeo completo da NASA (domínio público) + narração que explica o que aparece na tela
+async function mainVideo() {
+  const vcfg = cfg.videoNews;
+  const seenIds = new Set(history.published.map((p) => p.id));
+  let candidates = await findNasaVideo({ queries: vcfg.queries, seenIds: new Set([...seenIds].map((x) => String(x).replace(/^nasa-/, ""))), yearStart: vcfg.yearStart });
+  console.log(`[nasa] ${candidates.length} vídeos candidatos`);
+  if (candidates.length > 1 && process.env.ANTHROPIC_API_KEY) {
+    try {
+      candidates = await chooseVideo(candidates.slice(0, 30), cfg.script);
+    } catch (err) {
+      console.warn(`[nasa] escolha pelo Claude falhou (${err.message}); usando o mais recente.`);
+    }
+  }
+  let video, src, srcDur;
+  const outBase = path.join(ROOT, "out");
+  for (const c of candidates.slice(0, 6)) {
+    const dir = path.join(outBase, `nasa-${c.id.replace(/[^\w-]+/g, "_")}`);
+    fs.mkdirSync(dir, { recursive: true });
+    try {
+      srcDur = await downloadNasaVideo(c.id, path.join(dir, "original.mp4"));
+      if (srcDur < 12) throw new Error(`curto demais (${srcDur.toFixed(0)}s)`);
+      video = { ...c, dir };
+      src = path.join(dir, "original.mp4");
+      break;
+    } catch (err) {
+      console.warn(`[nasa] ${c.id} descartado: ${err.message}`);
+    }
+  }
+  if (!video) return console.log("[nasa] nenhum vídeo utilizável; encerrando.");
+  console.log(`[nasa] escolhido: ${video.title} (${srcDur.toFixed(0)}s)`);
+
+  const { frames } = extractFrames(src, video.dir, { every: 3, max: 16, maxSeconds: 90 });
+  const target = Math.min(vcfg.targetSeconds || 35, Math.max(15, srcDur * 1.3));
+  const script = await writeVideoScript({ video, frames, targetSeconds: Math.round(target), cfg: cfg.script });
+  console.log(`[roteiro] ${script.narration.split(/\s+/).length} palavras, começa em ${script.clipStart}s: ${script.headline}`);
+
+  const files = { audio: path.join(video.dir, "narracao.mp3"), ass: path.join(video.dir, "legenda.ass"), video: path.join(video.dir, "video.mp4"), cover: path.join(video.dir, "capa.png"), post: path.join(video.dir, "post.json") };
+  const voiceCfg = { ...cfg.voice };
+  const voice = pickVoice(voiceCfg, history.published.length + (opt("--voice-index") ? Number(opt("--voice-index")) : 0));
+  const { words } = await narrate(script.narration, voiceCfg, files.audio, voice);
+  console.log(`[voz] ${voice.name}: ${words.length} palavras sincronizadas`);
+  const clipStart = Math.max(0, Math.min(Number(script.clipStart) || 0, srcDur - 8));
+  const { duration } = renderNarratedVideo({ sourceMp4: src, clipStart, narrationMp3: files.audio, words, profile: cfg.profile, headline: script.headline, assPath: files.ass, outMp4: files.video });
+  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-ss", "1", "-i", files.video, "-frames:v", "1", files.cover]);
+  console.log(`[video] ${files.video} (${duration.toFixed(1)}s)`);
+
+  const story = { id: `nasa-${video.id}`, title: video.title, link: `https://images.nasa.gov/details/${encodeURIComponent(video.id)}`, source: "NASA", category: "ciencia" };
+  const record = { ...story, voice: voice.name, mode: "video", createdAt: new Date().toISOString(), script };
+  if (flag("--no-publish") || !emailReady()) {
+    fs.writeFileSync(files.post, JSON.stringify({ record }, null, 2));
+    return console.log("[publicar] pulado.");
+  }
+  const id = await sendVideoEmail({ script, story, voiceName: voice.name, duration, videoPath: files.video, coverPath: files.cover, downloadUrl: null });
+  console.log(`[publicar] e-mail enviado (${id})`);
+  fs.writeFileSync(files.post, JSON.stringify({ record }, null, 2));
+  history.published.push({ ...record, script: undefined, emailedAt: new Date().toISOString() });
+  history.published = history.published.slice(-500);
+  fs.writeFileSync(historyPath, JSON.stringify(history, null, 2) + "\n");
+}
+
 async function main() {
+  if (opt("--modo") === "video") return mainVideo();
   // 1. Notícia
   let story;
   const manualUrl = opt("--url");
