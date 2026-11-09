@@ -72,7 +72,12 @@ export async function fetchFeeds(feeds) {
 
 // Escolhe a notícia mais recente que ainda não foi publicada e passa nos filtros.
 // Se preferCategory for informado, dá preferência a esse assunto (rodízio de nichos).
-export function pickStory(items, { history, preferCategory, maxAgeHours = 12, maxAgeHoursByCategory = {}, blockKeywords = [], blockUrlParts = [], minDescriptionChars = 0 }) {
+export function pickStory(items, opts) {
+  return rankStories(items, opts)[0];
+}
+
+// Lista de candidatas já filtradas, da preferida (assunto do rodízio, mais recente) para a menos preferida.
+export function rankStories(items, { history, preferCategory, maxAgeHours = 12, maxAgeHoursByCategory = {}, blockKeywords = [], blockUrlParts = [], minDescriptionChars = 0 }) {
   const seen = new Set(history.published.map((p) => p.id));
   const seenTitles = history.published.map((p) => normalize(p.title));
   const blocked = blockKeywords.map(normalize);
@@ -94,7 +99,7 @@ export function pickStory(items, { history, preferCategory, maxAgeHours = 12, ma
     // evita repetir o mesmo assunto vindo de outro veículo
     .filter((it) => !seenTitles.some((t) => similarity(t, normalize(it.title)) > 0.6))
     .sort((a, b) => (b.publishedAt?.getTime() || 0) - (a.publishedAt?.getTime() || 0))
-    .sort((a, b) => (b.category === preferCategory) - (a.category === preferCategory))[0];
+    .sort((a, b) => (b.category === preferCategory) - (a.category === preferCategory));
 }
 
 function normalize(s) {

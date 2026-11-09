@@ -219,7 +219,10 @@
   "script": {
     "geminiModel": "gemini-2.5-flash",
     "claudeModel": "claude-opus-5-5",
-    "targetWords": "75 a 95"
+    "targetWords": "75 a 95",
+    "provider": "claude",
+    "_provider": "claude (melhor escrita, ~US$0,03 por vídeo) | gemini (grátis). O outro fica de reserva.",
+    "claudeEffort": "medium"
   },
   "publish": {
     "mode": "email",
@@ -248,7 +251,8 @@
   "images": {
     "_info": "Imagens extras no vídeo: as da própria matéria + banco gratuito (Pexels, se PEXELS_API_KEY existir, e Wikimedia Commons).",
     "max": 4,
-    "secondsEach": 4.5
+    "secondsEach": 4.5,
+    "maxVideos": 2
   },
   "schedule": {
     "_info": "O robô acorda de hora em hora e só gera vídeo dentro da janela, até o limite do dia e respeitando o intervalo mínimo (horário do profile.timezone).",

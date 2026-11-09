@@ -146,6 +146,18 @@ function segImage({ file, dur, zoomIn }, out) {
   ff(["-i", file, "-filter_complex", filter, "-map", "[v]", "-t", dur.toFixed(3), ...SEG_ENC, out]);
 }
 
+// Trecho de vídeo de banco (B-roll) dentro do card, fundo = o próprio vídeo desfocado
+function segClip({ file, dur }, out) {
+  const filter = [
+    `[0:v]fps=${FPS},split[a][b]`,
+    `[a]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},boxblur=30:3,eq=brightness=-0.3[bg]`,
+    `[b]scale=${CARD.w}:${CARD.h}:force_original_aspect_ratio=increase,crop=${CARD.w}:${CARD.h}[fg]`,
+    `[bg][fg]overlay=${CARD.x}:${CARD.y}[v]`,
+  ].join(";");
+  // começa um pouco depois do início (o 1º segundo de vídeos de banco costuma ser parado) e repete se for curto
+  ff(["-stream_loop", "-1", "-ss", "1", "-i", file, "-filter_complex", filter, "-map", "[v]", "-t", dur.toFixed(3), ...SEG_ENC, out]);
+}
+
 // Monta a linha do tempo: capa -> print -> fotos relacionadas -> print (continua rolando)
 export function planSegments({ duration, hasArticle, images, secondsEach = 4.5 }) {
   const segs = [{ type: "cover", dur: COVER_SECONDS }];
@@ -174,7 +186,7 @@ export function renderVideo({ coverPng, articlePng, audioMp3, words, profile, so
   let t = 0;
   const credits = [];
   for (const sg of segs) {
-    if (sg.type === "image") credits.push({ start: t, end: t + sg.dur, text: `Imagem: ${sg.image.credit}` });
+    if (sg.type === "image") credits.push({ start: t, end: t + sg.dur, text: `${sg.image.type === "video" ? "Vídeo" : "Imagem"}: ${sg.image.credit}` });
     t += sg.dur;
   }
   fs.writeFileSync(assPath, buildAss({ words, duration, profile, source, credits }));
@@ -194,7 +206,8 @@ export function renderVideo({ coverPng, articlePng, audioMp3, words, profile, so
     else if (sg.type === "print") {
       segPrint({ coverPng, art, dur: sg.dur, startY: scrolled, speed, travel }, out);
       scrolled += sg.dur * speed;
-    } else segImage({ file: sg.image.file, dur: sg.dur, zoomIn: sg.zoomIn }, out);
+    } else if (sg.image.type === "video") segClip({ file: sg.image.file, dur: sg.dur }, out);
+    else segImage({ file: sg.image.file, dur: sg.dur, zoomIn: sg.zoomIn }, out);
     parts.push(out);
   });
 

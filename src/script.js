@@ -29,11 +29,18 @@ ESTRUTURA OBRIGATÓRIA DA NARRAÇÃO:
    - contradição ou quebra de expectativa ("O vilão da pressão alta não é só o sal.")
    - consequência pessoal ("Isso pode mudar o preço do seu mercado.")
    Proibido começar com "Olá", "Neste vídeo", "Hoje vamos falar", "Você sabia que".
-2. LOOP ABERTO (2ª frase): prometa uma revelação que só vem no final ("E o motivo é mais estranho do que parece.").
+2. LOOP ABERTO (2ª frase): prometa uma revelação específica que só vem no final. Escreva uma promessa própria deste assunto; não repita fórmulas prontas como "E o motivo é mais estranho do que parece".
 3. CONTEXTO RÁPIDO: o que é, quem, onde, com 1 ou 2 dados concretos da matéria. Frases de até 12 palavras.
 4. VIRADA NO MEIO: uma frase que renova a atenção ("Mas a parte mais curiosa vem agora.", "Só que tem um detalhe.").
 5. REVELAÇÃO E IMPORTÂNCIA: feche o loop e explique por que isso importa para quem assiste (bolso, celular, saúde, futuro, como o mundo funciona).
 6. FINAL MARCANTE: uma frase curta de impacto, que dá vontade de comentar ou mandar para alguém, seguida de "segundo o <veículo>" ou "segundo a <veículo>".
+
+QUALIDADE (o que separa um vídeo viral de um vídeo esquecível):
+- Cada frase traz uma informação NOVA e concreta: número, nome, lugar, tamanho, consequência. Se a frase pode ser apagada sem perder nada, apague.
+- Use pelo menos uma comparação que a pessoa visualiza ("do tamanho de três campos de futebol", "mais quente que a superfície do Sol", "o preço de um cafezinho por dia").
+- Explique o "como" ou o "porquê", não só o "o quê". O público tem que sair sabendo algo que não sabia.
+- PROIBIDO frases vazias e genéricas, como: "isso mostra a importância de...", "o futuro é promissor", "o mercado está mudando", "protegendo seu futuro", "isso pode mudar tudo", "fique ligado", "é impressionante". Diga O QUE muda e PARA QUEM.
+- Exemplo de frase fraca: "A descoberta pode ajudar a ciência no futuro." Forte: "Com isso, um exame que hoje leva duas semanas pode sair em vinte minutos."
 
 REGRAS:
 - Português do Brasil falado, tom de amigo empolgado contando uma novidade: direto, leve, energético, sem gírias forçadas e sem opinião política.
@@ -62,26 +69,73 @@ ${story.category === "ciencia" ? `Este é um vídeo de DIVULGAÇÃO CIENTÍFICA 
 Escreva uma narração de ${cfg.targetWords} palavras (30 a 40 segundos falados).`;
 }
 
+// Ordem dos provedores: script.provider ("claude" ou "gemini") primeiro, o outro de reserva.
+function providers(cfg) {
+  const order = (cfg.provider || "claude") === "gemini" ? ["gemini", "claude"] : ["claude", "gemini"];
+  return order.filter((p) => (p === "claude" ? process.env.ANTHROPIC_API_KEY : process.env.GEMINI_API_KEY));
+}
+
+async function callModel(provider, { system, user, schema, cfg, effort }) {
+  return provider === "claude" ? claudeJson({ system, user, schema, cfg, effort }) : geminiJson({ system, user, schema, cfg });
+}
+
 export async function writeScript(story, articleText, cfg) {
-  try {
-    if (process.env.GEMINI_API_KEY) return validate(await withGemini(story, articleText, cfg));
-    if (process.env.ANTHROPIC_API_KEY) return validate(await withClaude(story, articleText, cfg));
-    console.warn("[script] nenhuma chave de IA definida: usando o resumo do RSS como narração.");
-  } catch (err) {
-    console.warn(`[script] falha ao gerar roteiro (${err.message}); usando o resumo do RSS.`);
+  for (const p of providers(cfg)) {
+    try {
+      const s = validate(await callModel(p, { system: SYSTEM, user: userPrompt(story, articleText, cfg), schema: SCHEMA, cfg, effort: cfg.claudeEffort || "medium" }));
+      console.log(`[roteiro] escrito por ${p}`);
+      return s;
+    } catch (err) {
+      console.warn(`[roteiro] ${p} falhou (${err.message})`);
+    }
   }
+  console.warn("[roteiro] nenhuma IA disponível: usando o resumo do RSS como narração.");
   return fallbackScript(story);
 }
 
-async function withGemini(story, articleText, cfg) {
+// ---------- Escolha da notícia ----------
+const CHOOSE_SCHEMA = {
+  type: "object",
+  properties: {
+    index: { type: "integer", description: "Número da notícia escolhida" },
+    reason: { type: "string", description: "Por que ela tem mais potencial, em uma frase" },
+  },
+  required: ["index", "reason"],
+};
+
+const CHOOSE_SYSTEM = `Você é o editor-chefe do @now.noticias, perfil de Reels sobre tecnologia, IA, ciência, curiosidades e economia do dia a dia.
+Escolha UMA notícia da lista para virar o próximo Reel de 35 segundos. Critérios, em ordem:
+1. Faz a pessoa parar de rolar o feed: surpreendente, curiosa, "eu não sabia disso", ou afeta diretamente a vida/bolso/celular de quem assiste.
+2. Rende uma explicação interessante (um fenômeno, uma descoberta, uma mudança concreta), não só um anúncio.
+3. Público amplo brasileiro, não nicho de especialista.
+DESCARTE: propaganda ou prêmio de empresa, resultado trimestral de empresa pouco conhecida, serviço do dia (fase da Lua, previsão do tempo, cotação), listas de compras/filmes/ofertas, eventos institucionais, política partidária, crimes e tragédias.`;
+
+export async function chooseStory(candidates, cfg) {
+  const list = candidates.map((c, i) => `${i}. [${c.source}] ${c.title}${c.description ? ` — ${c.description.slice(0, 160)}` : ""}`).join("\n");
+  for (const p of providers(cfg)) {
+    try {
+      const r = await callModel(p, { system: CHOOSE_SYSTEM, user: `Notícias candidatas:\n${list}`, schema: CHOOSE_SCHEMA, cfg, effort: "low" });
+      const pick = candidates[r.index];
+      if (pick) {
+        console.log(`[news] ${p} escolheu #${r.index} de ${candidates.length}: ${r.reason}`);
+        return pick;
+      }
+    } catch (err) {
+      console.warn(`[news] escolha por ${p} falhou (${err.message})`);
+    }
+  }
+  return candidates[0];
+}
+
+async function geminiJson({ system, user, schema, cfg }) {
   const model = cfg.geminiModel || "gemini-2.5-flash";
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM }] },
-      contents: [{ role: "user", parts: [{ text: userPrompt(story, articleText, cfg) }] }],
-      generationConfig: { temperature: 0.9, responseMimeType: "application/json", responseSchema: SCHEMA },
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig: { temperature: 0.9, responseMimeType: "application/json", responseSchema: schema },
     }),
     signal: AbortSignal.timeout(90000),
   });
@@ -92,22 +146,24 @@ async function withGemini(story, articleText, cfg) {
   return JSON.parse(text);
 }
 
-async function withClaude(story, articleText, cfg) {
+async function claudeJson({ system, user, schema, cfg, effort = "medium" }) {
   const client = new Anthropic();
-  const response = await client.beta.messages.create({
+  const stream = client.beta.messages.stream({
     model: cfg.claudeModel || "claude-opus-5-5",
-    max_tokens: 4000,
+    max_tokens: 16000,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
-    output_config: { effort: "low", format: { type: "json_schema", schema: { ...SCHEMA, additionalProperties: false } } },
-    system: SYSTEM,
-    messages: [{ role: "user", content: userPrompt(story, articleText, cfg) }],
+    output_config: { effort, format: { type: "json_schema", schema: { ...schema, additionalProperties: false } } },
+    system,
+    messages: [{ role: "user", content: user }],
   });
+  const response = await stream.finalMessage();
   if (response.stop_reason === "refusal") throw new Error("o modelo recusou esta notícia");
-  const text = response.content.find((b) => b.type === "text")?.text;
+  const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
   if (!text) throw new Error(`resposta sem texto (stop_reason=${response.stop_reason})`);
   return JSON.parse(text);
 }
+
 
 function validate(s) {
   for (const k of ["headline", "narration", "caption"])

@@ -7,9 +7,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { fetchFeeds, pickStory } from "./news.js";
+import { fetchFeeds, rankStories } from "./news.js";
 import { captureArticle, renderCover } from "./screenshot.js";
-import { writeScript } from "./script.js";
+import { writeScript, chooseStory } from "./script.js";
 import { narrate, pickVoice } from "./tts.js";
 import { renderVideo } from "./video.js";
 import { collectImages } from "./images.js";
@@ -36,7 +36,10 @@ async function main() {
     console.log(`[news] ${items.length} itens nos feeds`);
     const rotation = cfg.categories?.rotation || [];
     const preferCategory = opt("--category") || rotation[history.published.length % Math.max(1, rotation.length)];
-    story = pickStory(items, { history, preferCategory, ...cfg.selection });
+    const ranked = rankStories(items, { history, preferCategory, ...cfg.selection });
+    // a IA escolhe, entre as candidatas do assunto da vez, a com mais potencial (descarta propaganda, serviço, listas)
+    const pool = ranked.filter((s) => s.category === ranked[0]?.category).slice(0, 30);
+    story = pool.length > 1 ? await chooseStory(pool, cfg.script) : ranked[0];
     if (!story) {
       console.log("[news] nenhuma notícia nova; encerrando.");
       return;
@@ -80,8 +83,9 @@ async function main() {
     coverImage,
     outDir,
     max: cfg.images?.max ?? 4,
+    maxVideos: cfg.images?.maxVideos ?? 2,
   });
-  console.log(`[imagens] ${images.length} imagens: ${images.map((i) => i.credit).join(", ")}`);
+  console.log(`[imagens] ${images.length} mídias: ${images.map((i) => `${i.type === "video" ? "vídeo" : "foto"} ${i.credit}`).join(", ")}`);
   // Enquanto a chave do Google não estiver cadastrada, continua usando a ElevenLabs
   const voiceCfg = { ...cfg.voice };
   if (voiceCfg.provider !== "elevenlabs" && !process.env.GOOGLE_TTS_API_KEY && process.env.ELEVENLABS_API_KEY) {
