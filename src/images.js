@@ -97,17 +97,22 @@ async function searchCommons(query) {
 async function searchPixabayVideos(query) {
   const key = process.env.PIXABAY_API_KEY;
   if (!key) return [];
-  const params = new URLSearchParams({ key, q: query.slice(0, 100), per_page: "5", safesearch: "true" });
-  const res = await fetch(`https://pixabay.com/api/videos/?${params}`, { signal: AbortSignal.timeout(15000) });
-  if (!res.ok) throw new Error(`Pixabay vídeos HTTP ${res.status}`);
-  const data = await res.json();
-  return (data.hits || [])
-    .filter((h) => relevant(query, h.tags) && h.duration >= 4)
-    .slice(0, 1)
-    .map((h) => {
-      const v = h.videos.medium?.url ? h.videos.medium : h.videos.large?.url ? h.videos.large : h.videos.small;
-      return { type: "video", url: v.url, key: `pixabay-video-${h.id}`, credit: `Pixabay/${String(h.user).slice(0, 20)}` };
-    });
+  // tenta a busca completa; se não achar nada, versões mais simples ("bee stinger macro" -> "bee stinger" -> "bee")
+  const words = query.split(/\s+/).filter(Boolean);
+  const tries = [...new Set([query, words.slice(0, 2).join(" "), words[0]])].filter((q) => q && q.length > 2);
+  for (const q of tries) {
+    const params = new URLSearchParams({ key, q: q.slice(0, 100), per_page: "8", safesearch: "true" });
+    const res = await fetch(`https://pixabay.com/api/videos/?${params}`, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`Pixabay vídeos HTTP ${res.status}`);
+    const data = await res.json();
+    const hits = (data.hits || []).filter((h) => relevant(q, h.tags) && h.duration >= 4);
+    if (hits.length)
+      return hits.slice(0, 3).map((h) => {
+        const v = h.videos.medium?.url ? h.videos.medium : h.videos.large?.url ? h.videos.large : h.videos.small;
+        return { type: "video", url: v.url, key: `pixabay-video-${h.id}`, credit: `Pixabay/${String(h.user).slice(0, 20)}` };
+      });
+  }
+  return [];
 }
 
 // Trechos da NASA (domínio público) para assuntos de espaço
@@ -168,14 +173,17 @@ export async function collectImages({ articleImages = [], queries = [], videoQue
   // 1) foto da própria matéria (a mais relevante), 2) trechos de vídeo, 3) fotos de banco para completar
   const fromArticle = articleImages.filter((u) => u !== coverImage).map((url) => ({ type: "image", url, credit: "Reprodução" }));
   const videos = [];
-  // cenas sugeridas pelo roteiro primeiro (na ordem da narração), depois as buscas de foto
+  // cenas sugeridas pelo roteiro primeiro (na ordem da narração), depois as buscas de foto.
+  // Cada busca contribui com 1 vídeo; os outros resultados ficam de reserva se faltar.
+  const spare = [];
   for (const q of [...videoQueries.slice(0, 5), ...queries.slice(0, 3)]) {
     if (videos.length >= maxVideos) break;
     for (const search of [searchNasaClips, searchPixabayVideos]) {
       try {
-        const r = await search(q);
+        const r = (await search(q)).filter((x) => !videos.some((v) => v.key === x.key));
         if (r.length) {
-          videos.push(...r);
+          videos.push(r[0]);
+          spare.push(...r.slice(1));
           break;
         }
       } catch (err) {
@@ -197,6 +205,7 @@ export async function collectImages({ articleImages = [], queries = [], videoQue
       }
     }
   }
+  for (const x of spare) if (videos.length < maxVideos && !videos.some((v) => v.key === x.key)) videos.push(x);
   const candidates = [...fromArticle.slice(0, 1), ...videos.slice(0, maxVideos), ...fromArticle.slice(1), ...photos];
 
   // descarta repetidas: mesma URL, mesma foto do banco ou mesmo arquivo (a mesma foto pode vir de buscas diferentes)
