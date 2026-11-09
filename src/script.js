@@ -10,13 +10,18 @@ const SCHEMA = {
     narration: { type: "string", description: "Texto que será narrado" },
     caption: { type: "string", description: "Legenda do Instagram: 1ª linha = gancho forte com 1 emoji (é o que aparece antes do 'mais'); depois 2 ou 3 frases curtas; uma pergunta que provoque opinião nos comentários; uma chamada para salvar ou mandar para um amigo; na última linha 'Fonte: <veículo>'" },
     hashtags: { type: "array", items: { type: "string" } },
+    videoQueries: {
+      type: "array",
+      items: { type: "string" },
+      description: "4 buscas EM INGLÊS (2 a 4 palavras) de CENAS EM VÍDEO que ilustram a história, na ordem em que a narração fala delas. Pense no que um editor de TV poria na tela enquanto o apresentador conta a notícia: ações concretas e filmáveis (ex.: 'bee stinger macro', 'bee stinging skin', 'honey bee flying', 'syringe injection closeup'). Nada de conceitos abstratos.",
+    },
     imageQueries: {
       type: "array",
       items: { type: "string" },
       description: "3 buscas curtas EM INGLÊS (2 a 3 palavras) para achar fotos do assunto em bancos de imagens: as duas primeiras sobre o objeto, empresa, lugar ou pessoa específica da notícia (ex.: 'Lycurgus Cup', 'James Webb telescope', 'Nvidia chip'); a terceira um conceito genérico que ilustre o tema (ex.: 'ancient glass', 'smartphone', 'money coins')",
     },
   },
-  required: ["headline", "narration", "caption", "hashtags", "imageQueries"],
+  required: ["headline", "narration", "caption", "hashtags", "imageQueries", "videoQueries"],
 };
 
 const SYSTEM = `Você é o roteirista do @now.noticias, perfil brasileiro de Reels sobre tecnologia, inteligência artificial, ciência, curiosidades e economia do dia a dia.
@@ -170,6 +175,7 @@ function validate(s) {
     if (typeof s[k] !== "string" || !s[k].trim()) throw new Error(`campo ${k} vazio`);
   if (!Array.isArray(s.hashtags)) s.hashtags = [];
   if (!Array.isArray(s.imageQueries)) s.imageQueries = [];
+  if (!Array.isArray(s.videoQueries)) s.videoQueries = [];
   s.caption = formatCaption(s.caption);
   return s;
 }
@@ -208,5 +214,6 @@ function fallbackScript(story) {
     caption: `${story.title}\n\n${desc.slice(0, 300)}\n\nFonte: ${story.source}`,
     hashtags: ["noticias", "tecnologia", "ciencia", "economia", "curiosidades"],
     imageQueries: [],
+    videoQueries: [],
   };
 }

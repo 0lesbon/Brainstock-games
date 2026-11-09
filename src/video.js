@@ -147,7 +147,7 @@ function segImage({ file, dur, zoomIn }, out) {
 }
 
 // Trecho de vídeo de banco (B-roll) dentro do card, fundo = o próprio vídeo desfocado
-function segClip({ file, dur }, out) {
+function segClip({ file, dur, start = 1 }, out) {
   const filter = [
     `[0:v]fps=${FPS},split[a][b]`,
     `[a]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},boxblur=30:3,eq=brightness=-0.3[bg]`,
@@ -155,7 +155,7 @@ function segClip({ file, dur }, out) {
     `[bg][fg]overlay=${CARD.x}:${CARD.y}[v]`,
   ].join(";");
   // começa um pouco depois do início (o 1º segundo de vídeos de banco costuma ser parado) e repete se for curto
-  ff(["-stream_loop", "-1", "-ss", "1", "-i", file, "-filter_complex", filter, "-map", "[v]", "-t", dur.toFixed(3), ...SEG_ENC, out]);
+  ff(["-stream_loop", "-1", "-ss", String(start), "-i", file, "-filter_complex", filter, "-map", "[v]", "-t", dur.toFixed(3), ...SEG_ENC, out]);
 }
 
 // Monta a linha do tempo: capa -> print -> fotos relacionadas -> print (continua rolando)
@@ -164,9 +164,31 @@ export function planSegments({ duration, hasArticle, images, secondsEach = 4.5 }
   let rest = duration - COVER_SECONDS;
   if (!images.length) return [...segs, { type: "print", dur: rest }];
 
+  // Com vídeos suficientes, o Reel é quase todo em vídeo: print rápido (mostra a fonte) e depois as cenas
+  const videoFirst = images.filter((m) => m.type === "video").length >= 2;
+  if (videoFirst) {
+    if (hasArticle) segs.push({ type: "print", dur: Math.min(4, rest * 0.15) }), (rest -= segs[segs.length - 1].dur);
+    const base = (m) => (m.type === "video" ? 6 : 3.5);
+    const natural = images.reduce((n, m) => n + base(m), 0);
+    const factor = Math.min(1.5, Math.max(1, rest / natural));
+    const used = new Map();
+    for (let i = 0; rest > 0.4; i++) {
+      const m = images[i % images.length];
+      const d = Math.min(base(m) * factor, rest);
+      if (d < 1.5 && segs.length > 1) {
+        segs[segs.length - 1].dur += d;
+        break;
+      }
+      const offset = (used.get(m.file) || 0) * 6; // ao repetir um vídeo, usa outro trecho dele
+      used.set(m.file, (used.get(m.file) || 0) + 1);
+      segs.push({ type: "image", dur: d, image: m, zoomIn: i % 2 === 0, offset });
+      rest -= d;
+    }
+    return segs;
+  }
+
   const firstPrint = hasArticle ? Math.min(7, rest * 0.35) : 0;
   if (firstPrint > 0) segs.push({ type: "print", dur: firstPrint }), (rest -= firstPrint);
-
   const fit = Math.max(1, Math.min(images.length, Math.floor(rest / 3)));
   const each = Math.min(secondsEach, rest / fit);
   images.slice(0, fit).forEach((img, i) => segs.push({ type: "image", dur: each, image: img, zoomIn: i % 2 === 0 }));
@@ -206,7 +228,7 @@ export function renderVideo({ coverPng, articlePng, audioMp3, words, profile, so
     else if (sg.type === "print") {
       segPrint({ coverPng, art, dur: sg.dur, startY: scrolled, speed, travel }, out);
       scrolled += sg.dur * speed;
-    } else if (sg.image.type === "video") segClip({ file: sg.image.file, dur: sg.dur }, out);
+    } else if (sg.image.type === "video") segClip({ file: sg.image.file, dur: sg.dur, start: (sg.image.start || 1) + (sg.offset || 0) }, out);
     else segImage({ file: sg.image.file, dur: sg.dur, zoomIn: sg.zoomIn }, out);
     parts.push(out);
   });

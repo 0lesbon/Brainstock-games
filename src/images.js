@@ -110,6 +110,27 @@ async function searchPixabayVideos(query) {
     });
 }
 
+// Trechos da NASA (domínio público) para assuntos de espaço
+const SPACE = /space|nasa|planet|star|rocket|moon|mars|galaxy|telescope|satellite|astronaut|orbit|nebula|solar|earth from|comet|asteroid|launch/i;
+async function searchNasaClips(query) {
+  if (!SPACE.test(query)) return [];
+  const res = await fetch(`https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}&media_type=video`, {
+    headers: { "User-Agent": UA },
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!res.ok) throw new Error(`NASA HTTP ${res.status}`);
+  const items = ((await res.json()).collection?.items || [])
+    .map((it) => it.data?.[0])
+    .filter((m) => m && !/conference|briefing|interview|panel|webinar|town hall|q&a|replay/i.test(m.title));
+  const m = items[0];
+  if (!m) return [];
+  const a = await fetch(`https://images-api.nasa.gov/asset/${encodeURIComponent(m.nasa_id)}`, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20000) });
+  if (!a.ok) return [];
+  const files = (await a.json()).collection.items.map((i) => i.href);
+  const url = files.find((f) => /~mobile\.mp4$/i.test(f)) || files.find((f) => /~small\.mp4$/i.test(f)) || files.find((f) => /~medium\.mp4$/i.test(f));
+  return url ? [{ type: "video", url: url.replace(/^http:/, "https:"), key: `nasa-${m.nasa_id}`, credit: "NASA", skipIntro: true }] : [];
+}
+
 async function downloadVideo(url, outMp4) {
   const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(60000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -118,6 +139,7 @@ async function downloadVideo(url, outMp4) {
     execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", outMp4]).toString().trim(),
   );
   if (!(dur >= 3)) throw new Error(`vídeo curto demais (${dur}s)`);
+  return dur;
 }
 
 // Baixa e converte para JPG; descarta imagens pequenas ou quebradas.
@@ -142,16 +164,23 @@ async function download(url, outJpg) {
   }
 }
 
-export async function collectImages({ articleImages = [], queries = [], coverImage, outDir, max = 4, maxVideos = 2 }) {
+export async function collectImages({ articleImages = [], queries = [], videoQueries = [], coverImage, outDir, max = 4, maxVideos = 2 }) {
   // 1) foto da própria matéria (a mais relevante), 2) trechos de vídeo, 3) fotos de banco para completar
   const fromArticle = articleImages.filter((u) => u !== coverImage).map((url) => ({ type: "image", url, credit: "Reprodução" }));
   const videos = [];
-  for (const q of queries.slice(0, 3)) {
+  // cenas sugeridas pelo roteiro primeiro (na ordem da narração), depois as buscas de foto
+  for (const q of [...videoQueries.slice(0, 5), ...queries.slice(0, 3)]) {
     if (videos.length >= maxVideos) break;
-    try {
-      videos.push(...(await searchPixabayVideos(q)));
-    } catch (err) {
-      console.warn(`[imagens] busca de vídeo "${q}" falhou: ${err.message}`);
+    for (const search of [searchNasaClips, searchPixabayVideos]) {
+      try {
+        const r = await search(q);
+        if (r.length) {
+          videos.push(...r);
+          break;
+        }
+      } catch (err) {
+        console.warn(`[imagens] busca de vídeo "${q}" falhou: ${err.message}`);
+      }
     }
   }
   const photos = [];
@@ -181,22 +210,26 @@ export async function collectImages({ articleImages = [], queries = [], coverIma
     seen.add(key);
     const file = path.join(outDir, `${c.type === "video" ? "clip" : "img"}-${picked.length + 1}.${c.type === "video" ? "mp4" : "jpg"}`);
     try {
-      if (c.type === "video") await downloadVideo(c.url, file);
-      else await download(c.url, file);
+      let start = 1;
+      if (c.type === "video") {
+        const dur = await downloadVideo(c.url, file);
+        if (c.skipIntro) start = Math.min(20, dur * 0.2); // vídeos longos da NASA: pula a abertura
+      } else await download(c.url, file);
       const hash = crypto.createHash("md5").update(fs.readFileSync(file)).digest("hex");
       if (seenHashes.has(hash)) {
         fs.rmSync(file, { force: true });
         continue;
       }
       seenHashes.add(hash);
-      picked.push({ type: c.type, file, credit: c.credit, url: c.url });
+      picked.push({ type: c.type, file, credit: c.credit, url: c.url, start });
     } catch (err) {
       console.warn(`[imagens] descartada (${err.message}): ${c.url.slice(0, 90)}`);
     }
   }
-  // intercala vídeo e foto para dar ritmo
+  // vídeos na ordem da narração; fotos entram entre eles para completar
   const vids = picked.filter((p) => p.type === "video");
   const imgs = picked.filter((p) => p.type !== "video");
+  if (vids.length >= 2) return [...vids, ...imgs].slice(0, max);
   const out = [];
   while (vids.length || imgs.length) {
     if (imgs.length) out.push(imgs.shift());

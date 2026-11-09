@@ -143,6 +143,7 @@ async function main() {
   const images = await collectImages({
     articleImages,
     queries: script.imageQueries,
+    videoQueries: script.videoQueries,
     coverImage,
     outDir,
     max: cfg.images?.max ?? 4,
