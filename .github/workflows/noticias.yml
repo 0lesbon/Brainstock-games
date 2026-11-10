@@ -40,6 +40,10 @@ jobs:
       run: ${{ steps.decide.outputs.run }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # sempre a versão mais nova da branch (com o histórico atualizado por execuções anteriores),
+          # e não o commit do momento do disparo
+          ref: ${{ github.ref_name }}
       - id: decide
         name: É hora de um vídeo?
         run: |
@@ -58,6 +62,10 @@ jobs:
     environment: ELEVENLABS_API_KEY
     steps:
       - uses: actions/checkout@v4
+        with:
+          # sempre a versão mais nova da branch (com o histórico atualizado por execuções anteriores),
+          # e não o commit do momento do disparo
+          ref: ${{ github.ref_name }}
 
       - uses: actions/setup-node@v4
         with:
