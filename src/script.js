@@ -74,6 +74,31 @@ ${story.category === "ciencia" ? `Este é um vídeo de DIVULGAÇÃO CIENTÍFICA 
 Escreva uma narração de ${cfg.targetWords} palavras (30 a 40 segundos falados).`;
 }
 
+// Esquemas JSON: o Claude exige additionalProperties:false em todo objeto; o Gemini não aceita esse campo.
+function schemaFor(provider, schema) {
+  const walk = (s) => {
+    if (!s || typeof s !== "object") return s;
+    const out = Array.isArray(s) ? s.map(walk) : Object.fromEntries(Object.entries(s).filter(([k]) => k !== "additionalProperties").map(([k, v]) => [k, walk(v)]));
+    if (!Array.isArray(s) && s.type === "object" && provider === "claude") out.additionalProperties = false;
+    return out;
+  };
+  return walk(schema);
+}
+
+// Chama a IA de preferência e, se falhar (sem créditos, fora do ar...), a outra.
+export async function jsonWithFallback({ system, user, schema, cfg, effort }) {
+  let last;
+  for (const p of providers(cfg)) {
+    try {
+      return await callModel(p, { system, user, schema, cfg, effort });
+    } catch (err) {
+      last = err;
+      console.warn(`[ia] ${p} falhou (${String(err.message).slice(0, 160)}); tentando a reserva.`);
+    }
+  }
+  throw last || new Error("nenhuma IA configurada");
+}
+
 // Ordem dos provedores: script.provider ("claude" ou "gemini") primeiro, o outro de reserva.
 function providers(cfg) {
   const order = (cfg.provider || "claude") === "gemini" ? ["gemini", "claude"] : ["claude", "gemini"];
@@ -140,7 +165,7 @@ async function geminiJson({ system, user, schema, cfg }) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: user }] }],
-      generationConfig: { temperature: 0.9, responseMimeType: "application/json", responseSchema: schema },
+      generationConfig: { temperature: 0.9, responseMimeType: "application/json", responseSchema: schemaFor("gemini", schema) },
     }),
     signal: AbortSignal.timeout(90000),
   });
@@ -158,7 +183,7 @@ export async function claudeJson({ system, user, schema, cfg, effort = "medium" 
     max_tokens: 16000,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
-    output_config: { effort, format: { type: "json_schema", schema: { ...schema, additionalProperties: false } } },
+    output_config: { effort, format: { type: "json_schema", schema: schemaFor("claude", schema) } },
     system,
     messages: [{ role: "user", content: user }],
   });

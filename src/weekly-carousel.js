@@ -7,7 +7,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import nodemailer from "nodemailer";
 import { fetchFeeds } from "./news.js";
-import { claudeJson } from "./script.js";
+import { jsonWithFallback } from "./script.js";
 import { renderCarousel } from "./carousel.js";
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
@@ -105,7 +105,7 @@ export async function buildThemeCarousel({ theme, cfg, outDir, days = 7 }) {
 
   // 1) escolha das 10 (com 4 reservas, caso alguma matéria não abra)
   const list = pool.map((c, i) => `${i}. [${c.source}] ${c.title}${c.description ? ` — ${c.description.slice(0, 140)}` : ""}`).join("\n");
-  const pick = await claudeJson({
+  const pick = await jsonWithFallback({
     system: `Você é o editor-chefe do @now.noticias. Monte o carrossel semanal "${theme.name}".
 ${theme.brief}
 Escolha as 14 notícias da semana com mais potencial (as 10 primeiras são as titulares, em ordem de impacto; as 4 últimas são reservas).
@@ -139,7 +139,7 @@ DESCARTE: ofertas e listas de compras, propaganda de empresa, serviço do dia (f
 
   // 3) textos dos slides
   const material = chosen.map((c, i) => `### ${i}. [${c.story.source}] ${c.story.title}\n${c.text}`).join("\n\n");
-  const slides = await claudeJson({
+  const slides = await jsonWithFallback({
     system: `Você escreve o carrossel semanal "${theme.name}" do @now.noticias (Instagram, público brasileiro de 18 a 40 anos).
 ${theme.brief}
 Regras: português do Brasil, direto e leve; use APENAS fatos do texto de cada matéria (nunca invente números, nomes ou datas); explique o impacto para quem lê; nada de frases vazias.
