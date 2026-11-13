@@ -16,6 +16,7 @@ import { renderVideo } from "./video.js";
 import { collectImages } from "./images.js";
 import { uploadToGithubRelease, buildMetricoolPost, scheduleOnMetricool } from "./publish.js";
 import { emailReady, sendVideoEmail } from "./email.js";
+import { buildThemeCarousel, emailCarousel } from "./weekly-carousel.js";
 import { findNasaVideo, chooseVideo, downloadNasaVideo, extractFrames, writeVideoScript, renderNarratedVideo } from "./videonews.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -87,7 +88,28 @@ async function mainVideo() {
   fs.writeFileSync(historyPath, JSON.stringify(history, null, 2) + "\n");
 }
 
+// Carrosséis semanais por tema
+async function mainCarousel() {
+  const wanted = opt("--tema") || "todos";
+  const themes = cfg.carousels.themes.filter((t) => wanted === "todos" || t.id === wanted);
+  const fmt = (d) => new Intl.DateTimeFormat("pt-BR", { timeZone: cfg.profile.timezone, day: "numeric" }).format(d);
+  const month = new Intl.DateTimeFormat("pt-BR", { timeZone: cfg.profile.timezone, month: "short" }).format(new Date()).replace(".", "").toUpperCase();
+  const period = `${fmt(new Date(Date.now() - 6 * 86400000))} a ${fmt(new Date())} ${month}`;
+  for (const theme of themes) {
+    const outDir = path.join(ROOT, "out", `carrossel-${theme.id}`);
+    try {
+      const r = await buildThemeCarousel({ theme: { ...theme, period }, cfg, outDir, days: cfg.carousels.days || 7 });
+      console.log(`[carrossel:${theme.id}] ${r.files.length} imagens: ${r.title}`);
+      if (!flag("--no-publish") && emailReady()) console.log(`[carrossel:${theme.id}] e-mail enviado (${await emailCarousel({ ...r, themeName: theme.name })})`);
+    } catch (err) {
+      console.error(`[carrossel:${theme.id}] falhou: ${err.message}`);
+      process.exitCode = 1;
+    }
+  }
+}
+
 async function main() {
+  if (opt("--modo") === "carrossel") return mainCarousel();
   if (opt("--modo") === "video") return mainVideo();
   // 1. Notícia
   let story;

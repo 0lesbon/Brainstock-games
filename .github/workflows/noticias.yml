@@ -16,8 +16,12 @@ on:
         description: "Enviar/publicar? (desmarque para só gerar o vídeo)"
         type: boolean
         default: true
+      tema:
+        description: "Para modo carrossel: tecnologia, ciencia, curiosidades, economia ou todos"
+        required: false
+        default: "todos"
       modo:
-        description: "noticia (print + fotos) ou video (vídeo da NASA narrado)"
+        description: "noticia (print + fotos), video (vídeo da NASA narrado) ou carrossel"
         required: false
         default: "noticia"
       forcar:
@@ -47,7 +51,7 @@ jobs:
       - id: decide
         name: É hora de um vídeo?
         run: |
-          if [ "${{ inputs.forcar }}" = "true" ] || [ "${{ inputs.publicar }}" = "false" ] || [ -n "${{ inputs.url }}" ]; then
+          if [ "${{ inputs.forcar }}" = "true" ] || [ "${{ inputs.publicar }}" = "false" ] || [ -n "${{ inputs.url }}" ] || [ "${{ inputs.modo }}" = "carrossel" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"; echo "[agenda] disparo manual forçado"
           else
             node src/should-run.js
@@ -57,7 +61,7 @@ jobs:
     needs: agenda
     if: needs.agenda.outputs.run == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 45
     # As chaves estão guardadas neste ambiente (Settings > Environments)
     environment: ELEVENLABS_API_KEY
     steps:
@@ -99,11 +103,13 @@ jobs:
           INPUT_URL: ${{ inputs.url }}
           INPUT_PUBLICAR: ${{ inputs.publicar }}
           INPUT_MODO: ${{ inputs.modo }}
+          INPUT_TEMA: ${{ inputs.tema }}
         run: |
           ARGS=()
           if [ -n "$INPUT_URL" ]; then ARGS+=(--url "$INPUT_URL"); fi
           if [ "$INPUT_PUBLICAR" = "false" ]; then ARGS+=(--no-publish); fi
           if [ "$INPUT_MODO" = "video" ]; then ARGS+=(--modo video); fi
+          if [ "$INPUT_MODO" = "carrossel" ]; then ARGS+=(--modo carrossel --tema "${INPUT_TEMA:-todos}"); fi
           node src/run.js "${ARGS[@]}"
 
       - name: Guardar o vídeo como artefato do workflow

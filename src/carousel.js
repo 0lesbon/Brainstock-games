@@ -48,6 +48,9 @@ body { width:${W}px; height:${H}px; overflow:hidden; background:#0b0f19; color:#
 .photo { position:absolute; top:140px; left:64px; right:64px; height:560px; border-radius:28px; background-size:cover; background-position:center; overflow:hidden; }
 .photo::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg, transparent 60%, rgba(0,0,0,.45)); }
 .photo .chip { position:absolute; left:24px; bottom:24px; z-index:2; }
+.wm { position:absolute; z-index:4; font-weight:800; font-size:22px; letter-spacing:.5px; color:rgba(255,255,255,.88);
+      background:rgba(11,15,25,.55); padding:7px 14px; border-radius:18px; backdrop-filter:blur(4px); }
+.wm b { color:${accent}; }
 .num { position:absolute; top:630px; right:64px; width:150px; height:150px; border-radius:28px; background:${accent}; color:#fff; font-weight:900; font-size:84px; display:flex; align-items:center; justify-content:center; letter-spacing:-2px; box-shadow:0 10px 30px rgba(0,0,0,.45); z-index:2; }
 .body { position:absolute; top:810px; left:64px; right:64px; }
 .title { font-weight:900; font-size:56px; line-height:1.06; letter-spacing:-1px; margin-bottom:20px; }
@@ -73,6 +76,7 @@ function brandHtml(profile) {
 
 function coverSlide(d, profile, base, total) {
   return `<div class="cover-bg" style="background-image:url('${img(d.cover.image, base)}')"></div><div class="cover-shade"></div>
+  <div class="wm" style="top:130px;right:64px"><b>●</b> ${esc(profile.handle)}</div>
   <div class="top">${brandHtml(profile)}<span class="page">${esc(d.cover.period)}</span></div>
   <div class="cover-box"><div class="kicker">${esc(d.cover.kicker)}</div>
     <div class="cover-title">${hl(d.cover.title)}</div>
@@ -83,6 +87,7 @@ function coverSlide(d, profile, base, total) {
 function itemSlide(it, i, profile, base, total) {
   return `<div class="top">${brandHtml(profile)}<span class="page">${i + 2}/${total}</span></div>
   <div class="photo" style="background-image:url('${img(it.image, base)}')"><span class="chip">${esc(it.category)}</span></div>
+  <div class="wm" style="top:164px;right:88px"><b>●</b> ${esc(profile.handle)}</div>
   <div class="num">${String(i + 1).padStart(2, "0")}</div>
   <div class="body"><div class="title">${hl(it.title)}</div><div class="text">${hl(it.text)}</div>
     ${it.data ? `<div class="data"><span>👉</span><span>${hl(it.data)}</span></div>` : ""}</div>

@@ -277,5 +277,44 @@
     ],
     "yearStart": 2024,
     "targetSeconds": 35
+  },
+  "carousels": {
+    "_info": "Carrosséis semanais: capa + 10 notícias + chamada final, um por tema.",
+    "days": 7,
+    "themes": [
+      {
+        "id": "tecnologia",
+        "name": "Tecnologia e IA",
+        "categories": [
+          "tecnologia"
+        ],
+        "brief": "Foco em tecnologia do dia a dia, inteligência artificial, apps, celulares, segurança digital e games."
+      },
+      {
+        "id": "ciencia",
+        "name": "Ciência",
+        "categories": [
+          "ciencia"
+        ],
+        "brief": "Foco em descobertas científicas, espaço, saúde baseada em estudos, planeta e meio ambiente."
+      },
+      {
+        "id": "curiosidades",
+        "name": "Curiosidades",
+        "categories": [
+          "ciencia",
+          "tecnologia"
+        ],
+        "brief": "Foco em CURIOSIDADES: perguntas do tipo 'por que…?' e 'como funciona…?', recordes, descobertas estranhas, fatos que dão vontade de contar para alguém. Pode incluir matérias explicativas atemporais. Use título de capa como 'X curiosidades da semana que vão te surpreender'."
+      },
+      {
+        "id": "economia",
+        "name": "Economia",
+        "categories": [
+          "economia"
+        ],
+        "brief": "Foco no BOLSO: preços, salário, impostos, juros, dólar, Pix, golpes financeiros, direitos do consumidor. Traduza números para o impacto na vida de quem lê. Evite resultados trimestrais de empresas pouco conhecidas."
+      }
+    ]
   }
 }
