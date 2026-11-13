@@ -90,8 +90,15 @@ async function mainVideo() {
 
 // Carrosséis semanais por tema
 async function mainCarousel() {
-  const wanted = opt("--tema") || "todos";
-  const themes = cfg.carousels.themes.filter((t) => wanted === "todos" || t.id === wanted);
+  let wanted = opt("--tema") || "todos";
+  if (wanted === "auto") {
+    // dia da semana no fuso do perfil (0 = domingo)
+    const wd = new Date(new Date().toLocaleString("en-US", { timeZone: cfg.profile.timezone })).getDay();
+    wanted = cfg.carousels.calendar?.[String(wd)];
+    if (!wanted) return console.log("[carrossel] sem carrossel programado para hoje.");
+    console.log(`[carrossel] tema do dia: ${wanted}`);
+  }
+  const themes = cfg.carousels.themes.filter((t) => (wanted === "todos" ? t.id !== "geral" : t.id === wanted));
   const fmt = (d) => new Intl.DateTimeFormat("pt-BR", { timeZone: cfg.profile.timezone, day: "numeric" }).format(d);
   const month = new Intl.DateTimeFormat("pt-BR", { timeZone: cfg.profile.timezone, month: "short" }).format(new Date()).replace(".", "").toUpperCase();
   const period = `${fmt(new Date(Date.now() - 6 * 86400000))} a ${fmt(new Date())} ${month}`;

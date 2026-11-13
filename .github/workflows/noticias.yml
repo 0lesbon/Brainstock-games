@@ -17,7 +17,7 @@ on:
         type: boolean
         default: true
       tema:
-        description: "Para modo carrossel: tecnologia, ciencia, curiosidades, economia ou todos"
+        description: "Para modo carrossel: auto (tema do dia), tecnologia, ciencia, curiosidades, economia, geral ou todos"
         required: false
         default: "todos"
       modo:

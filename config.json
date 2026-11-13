@@ -314,7 +314,25 @@
           "economia"
         ],
         "brief": "Foco no BOLSO: preços, salário, impostos, juros, dólar, Pix, golpes financeiros, direitos do consumidor. Traduza números para o impacto na vida de quem lê. Evite resultados trimestrais de empresas pouco conhecidas."
+      },
+      {
+        "id": "geral",
+        "name": "Resumo da semana",
+        "categories": [
+          "tecnologia",
+          "ciencia",
+          "economia"
+        ],
+        "brief": "Resumo geral da semana: as notícias mais importantes e curiosas de tecnologia, IA, ciência e economia do dia a dia, bem variadas. Título de capa no estilo 'As 10 notícias que você perdeu nesta semana'."
       }
-    ]
+    ],
+    "_calendario": "tema 'auto' escolhe pelo dia da semana (horário do perfil): seg economia, ter tecnologia, qua ciencia, qui curiosidades, sex geral",
+    "calendar": {
+      "1": "economia",
+      "2": "tecnologia",
+      "3": "ciencia",
+      "4": "curiosidades",
+      "5": "geral"
+    }
   }
 }
