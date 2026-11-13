@@ -63,3 +63,8 @@ O arquivo `state/history.json` guarda o que já foi publicado, para não repetir
   (ex.: Agência Brasil, que permite reprodução com crédito) se quiser reduzir esse risco.
 - Os posts saem marcados como conteúdo gerado por IA no Instagram/YouTube/TikTok.
 - `selection.blockKeywords` evita temas sensíveis; revise a lista para o seu público.
+
+## Carrossel semanal
+
+`node src/carousel.js <dados.json> <pasta>` gera o carrossel do Instagram (1080x1350): capa, 10 notícias e chamada final,
+na identidade visual dos vídeos. O JSON traz o texto de cada slide (`*palavra*` vira destaque em vermelho) e a foto.
