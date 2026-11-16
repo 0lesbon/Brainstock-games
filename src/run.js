@@ -122,7 +122,10 @@ async function main() {
   let story;
   const manualUrl = opt("--url");
   if (manualUrl) {
-    story = { id: `manual-${Date.now()}`, category: opt("--category") || "tecnologia", source: opt("--source") || new URL(manualUrl).hostname.replace(/^www\./, ""), title: opt("--title") || "", link: manualUrl, description: "", image: null };
+    const host = new URL(manualUrl).hostname.replace(/^www\./, "");
+    const knownSources = { "cnnbrasil.com.br": "CNN Brasil", "g1.globo.com": "g1", "olhardigital.com.br": "Olhar Digital", "canaltech.com.br": "Canaltech", "tecnoblog.net": "Tecnoblog", "super.abril.com.br": "Superinteressante", "socientifica.com.br": "Socientífica", "infomoney.com.br": "InfoMoney", "exame.com": "Exame", "jornal.usp.br": "Jornal da USP", "agenciabrasil.ebc.com.br": "Agência Brasil" };
+    const feedCategory = cfg.feeds.find((f) => new URL(f.url).hostname.replace(/^www\./, "") === host)?.category;
+    story = { id: `manual-${Date.now()}`, category: opt("--category") || feedCategory || "ciencia", source: opt("--source") || knownSources[host] || host, title: opt("--title") || "", link: manualUrl, description: "", image: null };
   } else {
     const items = await fetchFeeds(cfg.feeds);
     console.log(`[news] ${items.length} itens nos feeds`);
