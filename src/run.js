@@ -130,7 +130,10 @@ async function main() {
     const preferCategory = opt("--category") || rotation[history.published.length % Math.max(1, rotation.length)];
     const ranked = rankStories(items, { history, preferCategory, ...cfg.selection });
     // a IA escolhe, entre as candidatas do assunto da vez, a com mais potencial (descarta propaganda, serviço, listas)
-    const pool = ranked.filter((s) => s.category === ranked[0]?.category).slice(0, 30);
+    // candidatas: o assunto da vez (preferido) + as mais fortes dos outros assuntos
+    const pref = ranked.filter((s) => s.category === ranked[0]?.category).slice(0, 22).map((s) => ({ ...s, preferred: true }));
+    const others = ranked.filter((s) => s.category !== ranked[0]?.category).slice(0, 14);
+    const pool = [...pref, ...others];
     story = pool.length > 1 ? await chooseStory(pool, cfg.script) : ranked[0];
     if (!story) {
       console.log("[news] nenhuma notícia nova; encerrando.");

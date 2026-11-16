@@ -6,9 +6,9 @@ import Anthropic from "@anthropic-ai/sdk";
 const SCHEMA = {
   type: "object",
   properties: {
-    headline: { type: "string", description: "Texto da CAPA do vídeo (o que aparece no 1º segundo): 4 a 8 palavras, curiosidade máxima, pode ser pergunta ou ter número, sem ponto final, nunca falso" },
+    headline: { type: "string", description: "Texto da CAPA do vídeo (1º segundo e miniatura no perfil): 4 a 7 palavras, com número concreto quando houver, de preferência em pergunta (modelo de sucesso: '720 mil BMW proibidos de dormir na garagem?'), nunca falso" },
     narration: { type: "string", description: "Texto que será narrado" },
-    caption: { type: "string", description: "Legenda do Instagram: 1ª linha = gancho forte com 1 emoji (é o que aparece antes do 'mais'); depois 2 ou 3 frases curtas; uma pergunta que provoque opinião nos comentários; uma chamada para salvar ou mandar para um amigo; na última linha 'Fonte: <veículo>'" },
+    caption: { type: "string", description: "Legenda do Instagram: 1ª linha = gancho forte com 1 emoji (é o que aparece antes do 'mais'); depois 2 ou 3 frases curtas; uma pergunta que provoque opinião nos comentários; uma chamada ESPECÍFICA para compartilhar dizendo para quem mandar (ex.: 'Manda pra quem tem BMW', 'Marca aquele amigo que vive no celular'); 'Siga @now.noticias' ; na última linha 'Fonte: <veículo>'" },
     hashtags: { type: "array", items: { type: "string" } },
     videoQueries: {
       type: "array",
@@ -38,7 +38,10 @@ ESTRUTURA OBRIGATÓRIA DA NARRAÇÃO:
 3. CONTEXTO RÁPIDO: o que é, quem, onde, com 1 ou 2 dados concretos da matéria. Frases de até 12 palavras.
 4. VIRADA NO MEIO: uma frase que renova a atenção ("Mas a parte mais curiosa vem agora.", "Só que tem um detalhe.").
 5. REVELAÇÃO E IMPORTÂNCIA: feche o loop e explique por que isso importa para quem assiste (bolso, celular, saúde, futuro, como o mundo funciona).
-6. FINAL MARCANTE: uma frase curta de impacto, que dá vontade de comentar ou mandar para alguém, seguida de "segundo o <veículo>" ou "segundo a <veículo>".
+6. FINAL MARCANTE: uma frase curta de impacto, seguida de "segundo o <veículo>" ou "segundo a <veículo>".
+7. ÚLTIMA FRASE (sempre): um convite curto para seguir, variando o texto, ex.: "Segue o Now pra não perder a próxima." ou "Siga o Now e fique sabendo primeiro."
+
+GANCHO: o modelo que mais funcionou no perfil foi "720 mil BMW proibidos de dormir na garagem?": número concreto + risco ou absurdo + pergunta. Prefira esse formato quando a notícia permitir.
 
 QUALIDADE (o que separa um vídeo viral de um vídeo esquecível):
 - Cada frase traz uma informação NOVA e concreta: número, nome, lugar, tamanho, consequência. Se a frase pode ser apagada sem perder nada, apague.
@@ -134,14 +137,23 @@ const CHOOSE_SCHEMA = {
 };
 
 const CHOOSE_SYSTEM = `Você é o editor-chefe do @now.noticias, perfil de Reels sobre tecnologia, IA, ciência, curiosidades e economia do dia a dia.
-Escolha UMA notícia da lista para virar o próximo Reel de 35 segundos. Critérios, em ordem:
-1. Faz a pessoa parar de rolar o feed: surpreendente, curiosa, "eu não sabia disso", ou afeta diretamente a vida/bolso/celular de quem assiste.
-2. Rende uma explicação interessante (um fenômeno, uma descoberta, uma mudança concreta), não só um anúncio.
-3. Público amplo brasileiro, não nicho de especialista.
-DESCARTE: propaganda ou prêmio de empresa, resultado trimestral de empresa pouco conhecida, serviço do dia (fase da Lua, previsão do tempo, cotação), listas de compras/filmes/ofertas, eventos institucionais, política partidária, crimes e tragédias.`;
+Escolha UMA notícia da lista para virar o próximo Reel de 35 segundos.
+
+O QUE OS DADOS DO NOSSO PERFIL MOSTRARAM:
+- Campeão absoluto (11 mil pessoas, 165 compartilhamentos): "720 mil BMW podem pegar fogo — proibidos de dormir na garagem?". Alerta útil, risco concreto para quem tem algo, número grande, gente mandou para amigos.
+- Bons (1 mil+): verdades absurdas e visuais: IA que recriou a imagem que a pessoa via, camarão cujo soco racha vidro, EUA controlando aviões com disquete.
+- Fracos (menos de 150): ciência acadêmica sem impacto (física de partículas, estrela distante, placa tectônica), notícia de empresa/resultado financeiro, serviço (fase da Lua), lista de filmes, novidade de app sem drama.
+
+Dê nota mental a cada candidata e escolha a de maior nota:
+1. ALERTA ÚTIL: afeta algo que a pessoa tem, usa ou paga (carro, celular, conta, comida, saúde, dinheiro, golpe)? (vale muito)
+2. ABSURDO MAS VERDADE: faz dizer "não acredito" e dá para imaginar a cena? (vale muito)
+3. COMPARTILHÁVEL: a pessoa mandaria para alguém específico ("manda pra quem tem BMW")? (vale muito)
+4. Público amplo brasileiro, sem precisar de conhecimento técnico.
+Dê preferência ao assunto marcado como [PREFERIDO], mas escolha outro se ele for claramente mais forte nesses critérios.
+DESCARTE: propaganda ou prêmio de empresa, resultado trimestral, serviço do dia (fase da Lua, previsão do tempo, cotação), listas de compras/filmes/ofertas, eventos institucionais, política partidária, crimes e tragédias.`;
 
 export async function chooseStory(candidates, cfg) {
-  const list = candidates.map((c, i) => `${i}. [${c.source}] ${c.title}${c.description ? ` — ${c.description.slice(0, 160)}` : ""}`).join("\n");
+  const list = candidates.map((c, i) => `${i}. ${c.preferred ? "[PREFERIDO] " : ""}[${c.source}] ${c.title}${c.description ? ` — ${c.description.slice(0, 160)}` : ""}`).join("\n");
   for (const p of providers(cfg)) {
     try {
       const r = await callModel(p, { system: CHOOSE_SYSTEM, user: `Notícias candidatas:\n${list}`, schema: CHOOSE_SCHEMA, cfg, effort: "low" });

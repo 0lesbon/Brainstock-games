@@ -239,7 +239,7 @@ export async function renderCover({ headline, source, image, profile, label = "N
       .brand { font-weight:800; font-size:40px; letter-spacing:1px; text-shadow:0 2px 8px #000; }
       .box { position:absolute; left:70px; right:70px; bottom:600px; }
       .src { display:inline-block; font-size:34px; font-weight:700; color:#fff; border-left:10px solid ${profile.accentColor}; padding-left:20px; margin-bottom:34px; opacity:.9; }
-      h1 { font-size:76px; line-height:1.12; font-weight:900; letter-spacing:-1px; }
+      h1 { font-size:96px; line-height:1.04; font-weight:900; letter-spacing:-2px; text-transform:uppercase; text-shadow:0 4px 18px rgba(0,0,0,.6); }
     </style></head><body>
       <div class="shade"></div>
       <div class="top"><span class="live">${esc(label)}</span><span class="brand">${esc(profile.name)}</span></div>
