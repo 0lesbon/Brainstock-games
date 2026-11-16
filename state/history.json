@@ -405,6 +405,17 @@
       "createdAt": "2026-11-16T20:35:17.536Z",
       "videoUrl": "https://github.com/0lesbon/Brainstock-games/releases/download/video-a22d3d2c9a286971/video.mp4",
       "emailedAt": "2026-11-16T20:35:25.389Z"
+    },
+    {
+      "id": "manual-1794862512940",
+      "title": "Um robô com pele macia e rosa olha para a câmera com olhos vidrados antes de puxar o rosto para um sorriso com covinhas.",
+      "link": "https://www.cnnbrasil.com.br/tecnologia/robo-coberto-com-pele-viva-e-realista-exibe-sorriso-com-covinhas/",
+      "source": "CNN Brasil",
+      "category": "ciencia",
+      "voice": "Sarah",
+      "createdAt": "2026-11-16T20:56:49.186Z",
+      "videoUrl": "https://github.com/0lesbon/Brainstock-games/releases/download/video-manual-1794862512940/video.mp4",
+      "emailedAt": "2026-11-16T20:57:02.974Z"
     }
   ]
 }
