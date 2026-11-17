@@ -1,0 +1,24 @@
+{
+  "cover": {
+    "kicker": "RESUMO DA SEMANA",
+    "title": "As 10 notícias de *tecnologia* que você *perdeu*",
+    "subtitle": "Troque pelas notícias reais. *Asteriscos* viram destaque em vermelho.",
+    "image": "foto.png",
+    "period": "SEMANA 00/00"
+  },
+  "items": [
+    {
+      "category": "IA",
+      "title": "Título forte de até 9 palavras com *destaque*",
+      "text": "Resumo de duas frases, só com fatos da matéria. Explica o impacto para quem lê.",
+      "data": "O número mais impressionante ou uma *dica prática*",
+      "image": "foto.png",
+      "source": "Nome do veículo"
+    }
+  ],
+  "cta": {
+    "title": "Qual dessas mais te *surpreendeu*?",
+    "comment": "Comente o número da notícia",
+    "follow": "Tecnologia, ciência e economia em 30 segundos, todo dia."
+  }
+}

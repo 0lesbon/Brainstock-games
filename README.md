@@ -64,6 +64,19 @@ O arquivo `state/history.json` guarda o que já foi publicado, para não repetir
 - Os posts saem marcados como conteúdo gerado por IA no Instagram/YouTube/TikTok.
 - `selection.blockKeywords` evita temas sensíveis; revise a lista para o seu público.
 
+## Carrossel (pausado, guardado para voltar depois)
+
+Os carrosséis estão **desligados** desde 17/11/2026 (o perfil passou a 4 Reels por dia), mas tudo continua no repositório:
+
+- `src/carousel.js`: o visual (1080x1350: capa, notícias com foto, número vermelho, destaque 👉, fonte, marca d'água e chamada final).
+- `src/weekly-carousel.js`: o robô completo (junta as notícias da semana, a IA escolhe 10, escreve os slides e manda por e-mail).
+- `config.json` → `carousels`: temas e calendário por dia da semana.
+- `carrossel/modelo/`: modelo de dados (`modelo.json`) e exemplo renderizado (`exemplo/`).
+- Tag git `carrossel-v1`: o código exato desse formato.
+
+**Para voltar:** rode o workflow com `modo` = `carrossel` e `tema` = `auto` (ou um tema), ou religue o agendamento
+"Carrossel do dia @now.noticias" (6h47, seg–sex). Para montar à mão: `node src/carousel.js carrossel/modelo/modelo.json saida/`.
+
 ## Carrossel semanal
 
 `node src/carousel.js <dados.json> <pasta>` gera o carrossel do Instagram (1080x1350): capa, 10 notícias e chamada final,
