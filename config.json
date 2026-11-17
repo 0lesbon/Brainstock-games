@@ -262,7 +262,7 @@
     "_info": "O robô acorda de hora em hora e só gera vídeo dentro da janela, até o limite do dia e respeitando o intervalo mínimo (horário do profile.timezone).",
     "startHour": 8,
     "endHour": 19,
-    "videosPerDay": 3,
+    "videosPerDay": 4,
     "minHoursBetween": 2.5
   },
   "videoNews": {
