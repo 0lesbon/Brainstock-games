@@ -12,11 +12,13 @@ const UA = "NowNoticiasBot/0.1 (+https://github.com/0lesbon/Brainstock-games)";
 
 const STOP = new Set(["the", "and", "with", "for", "from", "of", "in", "on", "a", "an", "to", "by", "new", "old"]);
 
-// A foto só serve se os tags/título dela tiverem pelo menos uma palavra importante da busca
+// A mídia só serve se os tags/título dela tiverem palavras importantes da busca:
+// 1 palavra para buscas curtas, 2 para buscas com 3+ palavras (evita "culture" achar um bule de chá)
 function relevant(query, text) {
   const words = query.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !STOP.has(w));
   const hay = (text || "").toLowerCase();
-  return words.some((w) => hay.includes(w.replace(/s$/, "")));
+  const hits = words.filter((w) => hay.includes(w.replace(/s$/, ""))).length;
+  return hits >= (words.length >= 3 ? 2 : 1);
 }
 
 async function searchPexels(query) {
