@@ -5,7 +5,7 @@ import path from "node:path";
 // ---------- Hospedagem: GitHub Releases ----------
 // O Metricool só aceita mídia por URL pública. No GitHub Actions o GITHUB_TOKEN já tem permissão
 // para criar releases; o repositório precisa ser público para o link funcionar sem login.
-export async function uploadToGithubRelease({ tag, name, files }) {
+export async function uploadToGithubRelease({ tag, name, files, body = "Vídeo gerado automaticamente." }) {
   const repo = process.env.GITHUB_REPOSITORY;
   const token = process.env.GITHUB_TOKEN;
   if (!repo || !token) throw new Error("GITHUB_REPOSITORY/GITHUB_TOKEN ausentes (rode no GitHub Actions).");
@@ -14,7 +14,7 @@ export async function uploadToGithubRelease({ tag, name, files }) {
   const rel = await fetch(`https://api.github.com/repos/${repo}/releases`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ tag_name: tag, name, body: "Vídeo gerado automaticamente.", prerelease: true }),
+    body: JSON.stringify({ tag_name: tag, name, body, prerelease: true }),
   });
   if (!rel.ok) throw new Error(`Criar release: HTTP ${rel.status} ${await rel.text()}`);
   const { upload_url } = await rel.json();

@@ -225,7 +225,11 @@ async function main() {
     if (!emailReady()) return skip("defina GMAIL_USER e GMAIL_APP_PASSWORD para receber os vídeos por e-mail.");
     let downloadUrl = null;
     try {
-      const urls = await uploadToGithubRelease({ tag: `video-${story.id}`, name: script.headline, files: [files.video, files.cover] });
+      const tags = (script.hashtags || []).map((h) => `#${h.replace(/^#/, "").replace(/\s+/g, "")}`).join(" ");
+      const meta = { id: story.id, headline: script.headline, category: story.category, source: story.source, voice: voice.name, duration, hashtags: script.hashtags || [] };
+      // a legenda e os dados ficam no release: o agendador do Metricool (skill now-publicar) lê daqui
+      const body = `${script.caption}\n\n${tags}\n\n<!--now-meta ${JSON.stringify(meta)} -->`;
+      const urls = await uploadToGithubRelease({ tag: `video-${story.id}`, name: script.headline, files: [files.video, files.cover], body });
       downloadUrl = urls["video.mp4"];
     } catch (err) {
       console.warn(`[publicar] não consegui criar o link de download (${err.message}); o vídeo vai só em anexo.`);

@@ -1,0 +1,142 @@
+{
+  "_info": "Controle do que já foi agendado no Metricool (marca now.noticias, blogId 8206313). Chave = tag do release. Mantido pela skill now-publicar.",
+  "blogId": "8206313",
+  "slots": {
+    "instagram": [
+      "09:00",
+      "12:00",
+      "15:00",
+      "18:30"
+    ],
+    "tiktok": [
+      "11:00",
+      "13:00",
+      "19:00",
+      "20:30"
+    ],
+    "youtube": [
+      "10:00",
+      "14:00",
+      "18:00",
+      "20:00"
+    ]
+  },
+  "backlogSlots": {
+    "tiktok": [
+      "16:00",
+      "21:30"
+    ],
+    "youtube": [
+      "12:30",
+      "21:00"
+    ]
+  },
+  "posts": {
+    "video-a22d3d2c9a286971": {
+      "title": "Secador na banheira mata como nos filmes?",
+      "instagram": "manual",
+      "tiktok": "2026-11-19T16:00",
+      "youtube": "2026-11-19T12:30"
+    },
+    "video-e52eb3e5bfec5eb7": {
+      "title": "Seu gato mia de propósito para você",
+      "instagram": "manual",
+      "tiktok": "2026-11-19T21:30",
+      "youtube": "2026-11-19T21:00"
+    },
+    "video-05aa9193c2f6dff2": {
+      "title": "O soco de camarão que racha vidro",
+      "instagram": "manual",
+      "tiktok": "2026-11-20T16:00",
+      "youtube": "2026-11-20T12:30"
+    },
+    "video-cb6cc043ad5ec9e5": {
+      "title": "Choveu carne crua do céu em 1876",
+      "instagram": "manual",
+      "tiktok": "2026-11-20T21:30",
+      "youtube": "2026-11-20T21:00"
+    },
+    "video-901a8038b7808253": {
+      "title": "A lesma que vive de luz do sol",
+      "instagram": "manual",
+      "tiktok": "2026-11-21T16:00",
+      "youtube": "2026-11-21T12:30"
+    },
+    "video-19365511fb7b97dc": {
+      "title": "A única estrela verde já descoberta",
+      "instagram": "manual",
+      "tiktok": "2026-11-21T21:30",
+      "youtube": "2026-11-21T21:00"
+    },
+    "video-e7549a483f050ad8": {
+      "title": "Por que o espelho desembaça de baixo?",
+      "instagram": "manual",
+      "tiktok": "2026-11-22T16:00",
+      "youtube": "2026-11-22T12:30"
+    },
+    "video-09383311e008f1fa": {
+      "title": "A chuva de sangue que caiu na Índia",
+      "instagram": "manual",
+      "tiktok": "2026-11-22T21:30",
+      "youtube": "2026-11-22T21:00"
+    },
+    "video-05128a813be29783": {
+      "title": "Seu antialérgico pode deixar seu cérebro lento",
+      "instagram": "manual",
+      "tiktok": "2026-11-23T16:00",
+      "youtube": "2026-11-23T12:30"
+    },
+    "video-8929598a77765167": {
+      "title": "IA redesenhou o que um cérebro via",
+      "instagram": "manual",
+      "tiktok": "2026-11-23T21:30",
+      "youtube": "2026-11-23T21:00"
+    },
+    "video-manual-1794862512940": {
+      "title": "Robô sorrindo com pele humana viva?",
+      "instagram": "manual",
+      "tiktok": "2026-11-24T16:00",
+      "youtube": "2026-11-24T12:30"
+    },
+    "video-50760c1d8ffc5140": {
+      "title": "Os EUA ainda controlam aviões com disquete",
+      "instagram": "manual",
+      "tiktok": "2026-11-24T21:30",
+      "youtube": "2026-11-24T21:00"
+    },
+    "video-62b0475e4bc66f0e": {
+      "title": "5 vacas viraram 2 mil numa ilha isolada?",
+      "instagram": "manual",
+      "tiktok": "2026-11-25T16:00",
+      "youtube": "2026-11-25T12:30"
+    },
+    "video-0bbf1813fcc89825": {
+      "title": "Catarro de baleia revelou seu DNA inteiro?",
+      "instagram": "manual",
+      "tiktok": "2026-11-25T21:30",
+      "youtube": "2026-11-25T21:00"
+    },
+    "video-1b79e669435a16d1": {
+      "title": "Vulcão gigante nasceu num milharal do México",
+      "instagram": "manual",
+      "tiktok": "2026-11-26T16:00",
+      "youtube": "2026-11-26T12:30"
+    },
+    "video-1517ac2e6a24317b": {
+      "title": "Placa tectônica se rasgando sob o Irã",
+      "instagram": "manual",
+      "tiktok": "2026-11-26T21:30",
+      "youtube": "2026-11-26T21:00"
+    },
+    "video-986e326c06c36a1b": {
+      "title": "GTA 6 barato pra PC? É golpe",
+      "instagram": "manual",
+      "tiktok": "2026-11-18T19:00",
+      "youtube": "2026-11-18T18:00"
+    }
+  },
+  "skip": [
+    "Releases anteriores ao corte que não estão em 'posts' só foram para o Instagram (manual) e não são atemporais: não reagendar."
+  ],
+  "cutoff": "2026-11-18T15:00:00Z"
+}

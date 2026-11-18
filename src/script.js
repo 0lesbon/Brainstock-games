@@ -112,10 +112,21 @@ async function callModel(provider, { system, user, schema, cfg, effort }) {
   return provider === "claude" ? claudeJson({ system, user, schema, cfg, effort }) : geminiJson({ system, user, schema, cfg });
 }
 
+// Aprendizados semanais (state/aprendizados.md), escritos pela análise de desempenho (skill now-aprender)
+import fsLearn from "node:fs";
+function learnings() {
+  try {
+    const t = fsLearn.readFileSync(new URL("../state/aprendizados.md", import.meta.url), "utf8").trim();
+    return t ? `\n\nAPRENDIZADOS DO PERFIL (dados reais de desempenho; siga estas orientações):\n${t.slice(0, 4000)}` : "";
+  } catch {
+    return "";
+  }
+}
+
 export async function writeScript(story, articleText, cfg) {
   for (const p of providers(cfg)) {
     try {
-      const s = validate(await callModel(p, { system: SYSTEM, user: userPrompt(story, articleText, cfg), schema: SCHEMA, cfg, effort: cfg.claudeEffort || "medium" }));
+      const s = validate(await callModel(p, { system: SYSTEM + learnings(), user: userPrompt(story, articleText, cfg), schema: SCHEMA, cfg, effort: cfg.claudeEffort || "medium" }));
       console.log(`[roteiro] escrito por ${p}`);
       return s;
     } catch (err) {
@@ -156,7 +167,7 @@ export async function chooseStory(candidates, cfg) {
   const list = candidates.map((c, i) => `${i}. ${c.preferred ? "[PREFERIDO] " : ""}[${c.source}] ${c.title}${c.description ? ` — ${c.description.slice(0, 160)}` : ""}`).join("\n");
   for (const p of providers(cfg)) {
     try {
-      const r = await callModel(p, { system: CHOOSE_SYSTEM, user: `Notícias candidatas:\n${list}`, schema: CHOOSE_SCHEMA, cfg, effort: "low" });
+      const r = await callModel(p, { system: CHOOSE_SYSTEM + learnings(), user: `Notícias candidatas:\n${list}`, schema: CHOOSE_SCHEMA, cfg, effort: "low" });
       const pick = candidates[r.index];
       if (pick) {
         console.log(`[news] ${p} escolheu #${r.index} de ${candidates.length}: ${r.reason}`);
