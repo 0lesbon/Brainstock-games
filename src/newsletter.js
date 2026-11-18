@@ -100,7 +100,7 @@ export async function buildNewsletter({ cfg, history, outDir, days = 7 }) {
   const ed = await jsonWithFallback({
     system: `Você edita a newsletter semanal "NOW em 5 minutos" do @now.noticias (tecnologia, IA, ciência, curiosidades e economia do bolso; público brasileiro de 18 a 40 anos).
 Escolha as 6 matérias mais relevantes e variadas da semana (no máximo 2 do mesmo tema) e escreva a edição.
-Regras: português do Brasil, frases curtas, tom de conversa; use APENAS fatos do texto de cada matéria (nunca invente números, nomes ou datas); explique o impacto para quem lê; nada de clichê ("fique ligado", "não perca"). Ordem: a mais forte primeiro.`,
+Regras: português do Brasil, frases curtas, tom de conversa; use APENAS fatos do texto de cada matéria (nunca invente números, nomes ou datas); explique o impacto para quem lê; nada de clichê ("fique ligado", "não perca"); evite tempo relativo ("hoje", "no domingo", "nesta sexta") porque a edição é lida dias depois: use a data (ex.: "em 15 de novembro") ou tire a referência; prefira histórias que continuem valendo ao longo da semana. Ordem: a mais forte primeiro.`,
     user: `Matérias da semana:\n\n${material.join("\n\n")}`,
     schema: SCHEMA,
     cfg: cfg.script,
