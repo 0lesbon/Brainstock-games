@@ -231,7 +231,7 @@ function validate(s) {
 // Garante a legenda em blocos (o modelo às vezes devolve tudo grudado: "universo?Salve este vídeo")
 export function formatCaption(text) {
   let t = text.replace(/\r/g, "").trim();
-  t = t.replace(/([.!?…])(?=[A-ZÀ-Ý0-9])/g, "$1 "); // espaço que faltou depois da pontuação
+  t = t.replace(/(?<!\d)([.!?…])(?=[A-ZÀ-Ý0-9])|([.!?…])(?=[A-ZÀ-Ý])/g, (m, a, b) => `${a || b} `); // espaço que faltou depois da pontuação (sem quebrar 621.14 ou 1.000)
   t = t.replace(/(\p{Extended_Pictographic}\uFE0F?)(?=[A-Za-zÀ-ÿ0-9])/gu, "$1\n\n"); // emoji do gancho seguido de texto
   t = t.replace(/\s*(Fonte:)/, "\n\n$1");
   // blocos: gancho | resumo (até 2 frases) | pergunta | chamada para salvar | fonte
