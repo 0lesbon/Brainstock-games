@@ -17,6 +17,7 @@ import { collectImages } from "./images.js";
 import { uploadToGithubRelease, buildMetricoolPost, scheduleOnMetricool } from "./publish.js";
 import { emailReady, sendVideoEmail } from "./email.js";
 import { buildThemeCarousel, emailCarousel } from "./weekly-carousel.js";
+import { buildNewsletter, emailNewsletter } from "./newsletter.js";
 import { findNasaVideo, chooseVideo, downloadNasaVideo, extractFrames, writeVideoScript, renderNarratedVideo } from "./videonews.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -115,7 +116,16 @@ async function mainCarousel() {
   }
 }
 
+async function mainNewsletter() {
+  const outDir = path.join(ROOT, "out", "newsletter");
+  const history = JSON.parse(fs.readFileSync(path.join(ROOT, "state", "history.json"), "utf8"));
+  const ed = await buildNewsletter({ cfg, history, outDir, days: cfg.newsletter?.days || 7 });
+  console.log(`[newsletter] ${ed.items.length} notícias: ${ed.subject}`);
+  if (!flag("--no-publish") && emailReady()) console.log(`[newsletter] e-mail enviado (${await emailNewsletter({ ...ed, outDir })})`);
+}
+
 async function main() {
+  if (opt("--modo") === "newsletter") return mainNewsletter();
   if (opt("--modo") === "carrossel") return mainCarousel();
   if (opt("--modo") === "video") return mainVideo();
   // 1. Notícia

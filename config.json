@@ -338,5 +338,15 @@
       "4": "curiosidades",
       "5": "geral"
     }
+  },
+  "newsletter": {
+    "_info": "Newsletter semanal 'NOW em 5 minutos' (Beehiiv). O robô monta a edição no domingo e manda por e-mail para revisão.",
+    "name": "NOW em 5 minutos",
+    "days": 7,
+    "links": {
+      "instagram": "https://www.instagram.com/now.noticias/",
+      "tiktok": "https://www.tiktok.com/@now.noticias",
+      "youtube": "https://www.youtube.com/channel/UCR3xiBlxbUYa4tcKCDrfxFQ"
+    }
   }
 }

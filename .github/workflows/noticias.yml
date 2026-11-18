@@ -21,7 +21,7 @@ on:
         required: false
         default: "todos"
       modo:
-        description: "noticia (print + fotos), video (vídeo da NASA narrado) ou carrossel"
+        description: "noticia (print + fotos), video (vídeo da NASA narrado), carrossel ou newsletter"
         required: false
         default: "noticia"
       forcar:
@@ -51,7 +51,7 @@ jobs:
       - id: decide
         name: É hora de um vídeo?
         run: |
-          if [ "${{ inputs.forcar }}" = "true" ] || [ "${{ inputs.publicar }}" = "false" ] || [ -n "${{ inputs.url }}" ] || [ "${{ inputs.modo }}" = "carrossel" ]; then
+          if [ "${{ inputs.forcar }}" = "true" ] || [ "${{ inputs.publicar }}" = "false" ] || [ -n "${{ inputs.url }}" ] || [ "${{ inputs.modo }}" = "carrossel" ] || [ "${{ inputs.modo }}" = "newsletter" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"; echo "[agenda] disparo manual forçado"
           else
             node src/should-run.js
@@ -110,6 +110,7 @@ jobs:
           if [ "$INPUT_PUBLICAR" = "false" ]; then ARGS+=(--no-publish); fi
           if [ "$INPUT_MODO" = "video" ]; then ARGS+=(--modo video); fi
           if [ "$INPUT_MODO" = "carrossel" ]; then ARGS+=(--modo carrossel --tema "${INPUT_TEMA:-todos}"); fi
+          if [ "$INPUT_MODO" = "newsletter" ]; then ARGS+=(--modo newsletter); fi
           node src/run.js "${ARGS[@]}"
 
       - name: Guardar o vídeo como artefato do workflow

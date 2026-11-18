@@ -22,7 +22,7 @@ function decode(s = "") {
 }
 
 // texto e foto da matéria (sem navegador: mais rápido para 10 matérias)
-async function readArticle(url) {
+export async function readArticle(url) {
   const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(25000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const html = await res.text();
