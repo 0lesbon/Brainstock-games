@@ -482,6 +482,17 @@
       "createdAt": "2026-11-18T17:43:49.641Z",
       "videoUrl": "https://github.com/0lesbon/Brainstock-games/releases/download/video-500ccf2c3961ccdd/video.mp4",
       "emailedAt": "2026-11-18T17:43:56.693Z"
+    },
+    {
+      "id": "1f46a5560a3c1058",
+      "title": "Bug em driver da NVIDIA grava até 30 GB por hora no SSD mesmo com PC parado",
+      "link": "https://canaltech.com.br/hardware/bug-em-driver-da-nvidia-grava-ate-30-gb-por-hora-no-ssd-mesmo-com-pc-parado/",
+      "source": "Canaltech",
+      "category": "tecnologia",
+      "voice": "sua voz",
+      "createdAt": "2026-11-18T21:04:06.177Z",
+      "videoUrl": "https://github.com/0lesbon/Brainstock-games/releases/download/video-1f46a5560a3c1058/video.mp4",
+      "emailedAt": "2026-11-18T21:04:12.988Z"
     }
   ]
 }
