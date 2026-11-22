@@ -1,4 +1,6 @@
-## Atualizado em 18/11/2026 (ponto de partida)
+## Atualizado em 22/11/2026
+
+Semana 15–22/11: sem dados novos. O Metricool ainda não devolveu métricas das contas novas (conectadas em 18/11) e as postagens pararam em 19/11 à noite por limite do plano grátis. Aprendizados abaixo continuam os do ponto de partida (18/11).
 
 Base: análise manual do Instagram (30 dias, ~21,5 mil visualizações, quase todas de não seguidores).
 
