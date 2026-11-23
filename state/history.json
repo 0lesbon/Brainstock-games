@@ -636,6 +636,17 @@
       "createdAt": "2026-11-23T11:34:58.815Z",
       "videoUrl": "https://github.com/0lesbon/Brainstock-games/releases/download/video-520e49de80289e3f/video.mp4",
       "emailedAt": "2026-11-23T11:35:04.060Z"
+    },
+    {
+      "id": "dfd6f5046707dfe2",
+      "title": "ChatGPT aprende a dirigir carro",
+      "link": "https://super.abril.com.br/tecnologia/chatgpt-aprende-a-dirigir-carro/",
+      "source": "Superinteressante",
+      "category": "ciencia",
+      "voice": "Matilda",
+      "createdAt": "2026-11-23T14:35:07.509Z",
+      "videoUrl": "https://github.com/0lesbon/Brainstock-games/releases/download/video-dfd6f5046707dfe2/video.mp4",
+      "emailedAt": "2026-11-23T14:35:18.223Z"
     }
   ]
 }
