@@ -240,5 +240,6 @@
   "skip": [
     "Releases anteriores ao corte que não estão em 'posts' só foram para o Instagram (manual) e não são atemporais: não reagendar."
   ],
-  "cutoff": "2026-11-18T15:00:00Z"
+  "cutoff": "2026-11-18T15:00:00Z",
+  "_modo": "Desde 23/11/2026: postagem manual pelo e-mail (plano grátis do Metricool atingiu o limite). Não agendar no Metricool até o usuário pedir."
 }
