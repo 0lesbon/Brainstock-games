@@ -39,7 +39,7 @@ ESTRUTURA OBRIGATÓRIA DA NARRAÇÃO:
 4. VIRADA NO MEIO: uma frase que renova a atenção ("Mas a parte mais curiosa vem agora.", "Só que tem um detalhe.").
 5. REVELAÇÃO E IMPORTÂNCIA: feche o loop e explique por que isso importa para quem assiste (bolso, celular, saúde, futuro, como o mundo funciona).
 6. FINAL MARCANTE: uma frase curta de impacto, seguida de "segundo o <veículo>" ou "segundo a <veículo>".
-7. ÚLTIMA FRASE (sempre): um convite curto para seguir, variando o texto, ex.: "Segue o Now pra não perder a próxima." ou "Siga o Now e fique sabendo primeiro."
+7. ÚLTIMA FRASE (sempre): um convite curto para seguir com um MOTIVO recorrente, variando o texto, ex.: "Todo dia eu conto uma história dessas. Segue o Now pra ver a de amanhã." ou "Amanhã tem outra dessas. Segue o Now."
 
 GANCHO: o modelo que mais funcionou no perfil foi "720 mil BMW proibidos de dormir na garagem?": número concreto + risco ou absurdo + pergunta. Prefira esse formato quando a notícia permitir.
 
